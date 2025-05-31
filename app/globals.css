@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 33% 98%;
+    --foreground: 210 30% 17%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 30% 17%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 30% 17%;
+
+    --primary: 203 73% 64%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 30% 17%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 20% 92%;
+    --muted-foreground: 210 20% 40%;
+
+    --accent: 326 100% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 20% 88%;
+    --input: 210 20% 88%;
+    --ring: 203 73% 64%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 210 30% 17%;
+    --foreground: 210 20% 98%;
+
+    --card: 210 33% 20%;
+    --card-foreground: 210 20% 98%;
+
+    --popover: 210 33% 20%;
+    --popover-foreground: 210 20% 98%;
+
+    --primary: 203 73% 64%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 20% 98%;
+    --secondary-foreground: 210 30% 17%;
+
+    --muted: 210 33% 25%;
+    --muted-foreground: 210 20% 70%;
+
+    --accent: 326 100% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 33% 25%;
+    --input: 210 33% 25%;
+    --ring: 203 73% 64%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Custom animations */
+.hover-scale {
+  @apply transition-transform duration-300;
+}
+.hover-scale:hover {
+  @apply transform scale-105;
+}
+
+.hover-glow {
+  @apply transition-all duration-300;
+}
+.hover-glow:hover {
+  @apply shadow-lg;
+  box-shadow: 0 0 15px rgba(95, 176, 230, 0.5);
+}
+
+.hover-border {
+  @apply transition-all duration-300 border-transparent;
+}
+.hover-border:hover {
+  @apply border-neonpink;
+}
+
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-skyblue to-neonpink;
+}
+
+.card-transition {
+  @apply transition-all duration-300 hover:shadow-lg;
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow linear infinite;
+}
+
