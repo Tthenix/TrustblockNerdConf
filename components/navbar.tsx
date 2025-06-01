@@ -34,18 +34,18 @@ export function Navbar() {
           <NavigationMenu className="hidden md:flex">
             <NavigationMenuList>
               <NavigationMenuItem>
-                <Link href="/campaigns" legacyBehavior passHref>
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                <NavigationMenuLink asChild>
+                  <Link href="/campaigns" className={navigationMenuTriggerStyle()}>
                     Explorar
-                  </NavigationMenuLink>
-                </Link>
+                  </Link>
+                </NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link href="/licitaciones" legacyBehavior passHref>
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                <NavigationMenuLink asChild>
+                  <Link href="/licitaciones" className={navigationMenuTriggerStyle()}>
                     Licitaciones
-                  </NavigationMenuLink>
-                </Link>
+                  </Link>
+                </NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
                 <Link href="/verificar-identidad" legacyBehavior passHref>
@@ -74,12 +74,11 @@ export function Navbar() {
                       </NavigationMenuLink>
                     </li>
                     <li>
-                      <Link
-                        href="/how-it-works/verification"
-                        legacyBehavior
-                        passHref
-                      >
-                        <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href="/how-it-works/verification"
+                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                        >
                           <div className="text-sm font-medium leading-none">
                             Verificación
                           </div>
@@ -87,50 +86,48 @@ export function Navbar() {
                             Cómo funciona la verificación de identidad en
                             blockchain
                           </p>
-                        </NavigationMenuLink>
-                      </Link>
+                        </Link>
+                      </NavigationMenuLink>
                     </li>
                     <li>
-                      <Link
-                        href="/how-it-works/transparency"
-                        legacyBehavior
-                        passHref
-                      >
-                        <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href="/how-it-works/transparency"
+                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                        >
                           <div className="text-sm font-medium leading-none">
                             Transparencia
                           </div>
                           <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                             Seguimiento de fondos en tiempo real con blockchain
                           </p>
-                        </NavigationMenuLink>
-                      </Link>
+                        </Link>
+                      </NavigationMenuLink>
                     </li>
                     <li>
-                      <Link
-                        href="/how-it-works/rewards"
-                        legacyBehavior
-                        passHref
-                      >
-                        <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href="/how-it-works/rewards"
+                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                        >
                           <div className="text-sm font-medium leading-none">
                             Recompensas
                           </div>
                           <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                             NFTs y beneficios para donantes
                           </p>
-                        </NavigationMenuLink>
-                      </Link>
+                        </Link>
+                      </NavigationMenuLink>
                     </li>
                   </ul>
                 </NavigationMenuContent>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link href="/about" legacyBehavior passHref>
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                <NavigationMenuLink asChild>
+                  <Link href="/about" className={navigationMenuTriggerStyle()}>
                     Acerca de
-                  </NavigationMenuLink>
-                </Link>
+                  </Link>
+                </NavigationMenuLink>
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
@@ -139,11 +136,11 @@ export function Navbar() {
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center gap-4">
             <ConnectWalletButton />
-            <Link href="/campaigns/create" passHref>
-              <Button className="bg-neonpink hover:bg-neonpink/80 transition-colors">
+            <Button asChild className="bg-neonpink hover:bg-neonpink/80 transition-colors">
+              <Link href="/campaigns/create">
                 Crear Campaña
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
 
           <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
@@ -223,15 +220,14 @@ export function Navbar() {
                 </div>
                 <div className="grid gap-2">
                   <ConnectWalletButton />
-                  <Link
-                    href="/campaigns/create"
-                    passHref
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <Button className="w-full bg-neonpink hover:bg-neonpink/80 transition-colors">
+                  <Button asChild className="w-full bg-neonpink hover:bg-neonpink/80 transition-colors">
+                    <Link
+                      href="/campaigns/create"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
                       Crear Campaña
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 </div>
               </div>
             </SheetContent>

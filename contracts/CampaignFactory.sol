@@ -11,12 +11,17 @@ contract CampaignFactory {
     function createCampaign(
         string memory _title,
         string memory _description,
+        string memory _image, // NUEVO
         uint256 _targetAmount,
         uint256 _durationInDays
     ) public {
+        // TODO: Implementar verificación con SumSub en el futuro
+        // Por ahora permitimos que cualquiera cree campañas
+        
         Campaign newCampaign = new Campaign(
             _title,
             _description,
+            _image, // NUEVO
             _targetAmount,
             _durationInDays
         );

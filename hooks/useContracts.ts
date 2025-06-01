@@ -11,6 +11,7 @@ const CAMPAIGN_FACTORY_ABI = [
   "event CampaignCreated(address campaignAddress, address creator, string title)"
 ];
 
+
 const CAMPAIGN_ABI = [
   "function contribute() external payable",
   "function getCampaignInfo() external view returns (tuple(address creator, string title, string description, uint256 targetAmount, uint256 currentAmount, uint256 deadline, bool isActive, bool goalReached))",
