@@ -14,6 +14,9 @@ contract CampaignFactory {
         uint256 _targetAmount,
         uint256 _durationInDays
     ) public {
+        // TODO: Implementar verificación con SumSub en el futuro
+        // Por ahora permitimos que cualquiera cree campañas
+        
         Campaign newCampaign = new Campaign(
             _title,
             _description,

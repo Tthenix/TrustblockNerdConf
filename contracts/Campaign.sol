@@ -21,16 +21,6 @@ contract Campaign {
     event GoalReached(uint256 totalAmount);
     event FundsWithdrawn(address creator, uint256 amount);
     
-    modifier onlyCreator() {
-        require(msg.sender == campaign.creator, "Only creator can call this");
-        _;
-    }
-    
-    modifier isActiveCampaign() {
-        require(campaign.isActive && block.timestamp <= campaign.deadline, "Campaign not active");
-        _;
-    }
-    
     constructor(
         string memory _title,
         string memory _description,
@@ -49,7 +39,18 @@ contract Campaign {
         });
     }
     
-    function contribute() external payable isActiveCampaign {
+    modifier onlyCreator() {
+        require(msg.sender == campaign.creator, "Only creator can call this function");
+        _;
+    }
+    
+    modifier campaignActive() {
+        require(campaign.isActive, "Campaign is not active");
+        require(block.timestamp < campaign.deadline, "Campaign has ended");
+        _;
+    }
+    
+    function contribute() external payable campaignActive {
         require(msg.value > 0, "Contribution must be greater than 0");
         
         if (contributions[msg.sender] == 0) {
@@ -67,8 +68,16 @@ contract Campaign {
         }
     }
     
+    function getCampaignInfo() external view returns (CampaignData memory) {
+        return campaign;
+    }
+    
+    function getContributors() external view returns (address[] memory) {
+        return contributors;
+    }
+    
     function withdrawFunds() external onlyCreator {
-        require(campaign.goalReached || block.timestamp > campaign.deadline, "Cannot withdraw yet");
+        require(campaign.goalReached || block.timestamp >= campaign.deadline, "Cannot withdraw yet");
         require(campaign.currentAmount > 0, "No funds to withdraw");
         
         uint256 amount = campaign.currentAmount;
@@ -80,20 +89,13 @@ contract Campaign {
     }
     
     function refund() external {
-        require(block.timestamp > campaign.deadline && !campaign.goalReached, "Refund not available");
+        require(block.timestamp >= campaign.deadline, "Campaign still active");
+        require(!campaign.goalReached, "Goal was reached, no refunds");
         require(contributions[msg.sender] > 0, "No contribution to refund");
         
-        uint256 amount = contributions[msg.sender];
+        uint256 refundAmount = contributions[msg.sender];
         contributions[msg.sender] = 0;
         
-        payable(msg.sender).transfer(amount);
-    }
-    
-    function getCampaignInfo() external view returns (CampaignData memory) {
-        return campaign;
-    }
-    
-    function getContributors() external view returns (address[] memory) {
-        return contributors;
+        payable(msg.sender).transfer(refundAmount);
     }
 }

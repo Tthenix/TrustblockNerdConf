@@ -5,6 +5,7 @@ import Image from "next/image"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Clock, Users } from "lucide-react"
 
 interface Campaign {
@@ -17,6 +18,10 @@ interface Campaign {
   backers: number
   daysLeft: number
   image: string
+  // ✅ Propiedades opcionales para campañas blockchain
+  verified?: boolean
+  category?: string
+  address?: string // Dirección del contrato
 }
 
 interface CampaignCardProps {
@@ -27,7 +32,7 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
   const progress = Math.min(Math.round((campaign.raised / campaign.goal) * 100), 100)
 
   return (
-    <Card className="overflow-hidden hover-scale card-transition border border-border/50 bg-card/80 backdrop-blur-sm">
+    <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-neonpink/20 border border-border/50 bg-card/80 backdrop-blur-sm">
       <CardHeader className="p-0">
         <div className="overflow-hidden">
           <Image
@@ -35,12 +40,63 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
             alt={campaign.title}
             width={400}
             height={192}
-            className="w-full h-48 object-cover transition-transform duration-500 hover:scale-110"
+            className="w-full h-48 object-cover transition-transform duration-300 hover:scale-105"
           />
         </div>
       </CardHeader>
       <CardContent className="p-6">
-        <div className="mb-2 text-sm font-medium text-skyblue">{campaign.organization}</div>
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-sm font-medium text-skyblue">{campaign.organization}</div>
+          {campaign.verified && (
+            <Badge variant="secondary" className="text-xs">
+              ✓ Verificado
+            </Badge>
+          )}
+        </div>
+        
+        {/* 🆕 Mostrar dirección del contrato si es una campaña blockchain */}
+        {campaign.category === "Blockchain" && campaign.address && (
+          <div className="mb-3 p-2 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-md border border-purple-500/20">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-xs bg-purple-500/20 border-purple-500/50">
+                  🔗 Blockchain
+                </Badge>
+              </div>
+              <a
+                href={`https://moonbase.moonscan.io/address/${campaign.address}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-purple-400 hover:text-purple-300"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Ver en Explorer ↗
+              </a>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Contrato:</span>
+              <div className="flex items-center gap-2">
+                <code className="text-xs font-mono bg-background px-2 py-1 rounded border">
+                  {campaign.address.slice(0, 6)}...{campaign.address.slice(-4)}
+                </code>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 px-2 text-xs hover:bg-purple-500/20"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(campaign.address!);
+                  }}
+                  title="Copiar dirección completa"
+                >
+                  📋
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <h3 className="text-xl font-bold mb-2 line-clamp-1">{campaign.title}</h3>
         <p className="text-muted-foreground mb-4 line-clamp-2">{campaign.description}</p>
 

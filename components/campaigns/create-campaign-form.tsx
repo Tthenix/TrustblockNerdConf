@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,8 +13,9 @@ import { VerificationStatus } from "@/components/verification-status";
 import { RewardForm } from "@/components/reward-form";
 import { Upload, Target, Award, Info } from "lucide-react";
 import { toast } from "sonner";
-import { useContracts } from "@/hooks/useContracts";
+import { useBlockchainContracts } from "@/hooks/useBlockchainContracts";
 import { useWeb3 } from "@/components/providers/web3-provider";
+import { ethers } from "ethers";
 import Image from "next/image";
 
 interface StoredCampaign {
@@ -45,8 +47,8 @@ export function CreateCampaignForm() {
   const [image, setImage] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-    const { createCampaign, isConnected } = useContracts();
-  const { connectWallet, account } = useWeb3();
+  const { createCampaignOnBlockchain, isConnected } = useBlockchainContracts();
+  const { connectWallet, account, chainId } = useWeb3();
 
   // Debug logging
   console.log("Component state:", { isConnected, account, isLoading, step });
@@ -116,75 +118,52 @@ export function CreateCampaignForm() {
 
     setIsLoading(true);
     try {
-      const txHash = await createCampaign(
+      // 🚀 Crear campaña en el blockchain
+      console.log("Creating blockchain campaign with data:", {
         title,
         description,
-        targetAmount,
-        parseInt(duration)
-      );
-
-      // Generar un id único para la campaña
-      const campaigns: StoredCampaign[] = JSON.parse(localStorage.getItem("campaigns") || "[]");
-      const maxId = Math.max(
-        ...campaigns.map((c: StoredCampaign) => parseInt(c.id) || 0),
-        9 // Las campañas hardcodeadas usan IDs del 0-9
-      );
-      const newId = (maxId + 1).toString();
-      
-      // Crear la campaña con todos los campos necesarios
-      const newCampaign = {
-        id: newId,
-        title,
-        organization: organization || "Organización Desconocida",
-        description,
-        raised: 0,
         goal: Number(targetAmount),
-        backers: 0,
-        daysLeft: Number(duration),
-        image: image || "/api/placeholder/600/400",
-        featured: false,
-        verified: true, // Si pasó la verificación
-        category: category || "Sin Categoría",
-        location: location || "Ubicación no especificada",
-        website: website || "",
-        txHash,
-        createdAt: new Date().toISOString(),
-        account,
-        rewards: [
-          {
-            id: "1",
-            title: "Certificado Digital",
-            description: "NFT que certifica tu contribución a la campaña",
-            minDonation: 10,
-            claimed: 0,
-          },
-          {
-            id: "2",
-            title: "Donante Destacado",
-            description: "Reconocimiento en el informe final de la campaña y certificado especial",
-            minDonation: 100,
-            claimed: 0,
-          },
-          {
-            id: "3",
-            title: "Patrocinador Oficial",
-            description: "Reconocimiento prominente, certificado especial y participación en el evento de cierre",
-            minDonation: 500,
-            claimed: 0,
-          },
-        ],
-        updates: [],
-        transactions: [],
-      };
+        durationDays: Number(duration)
+      });
 
-      campaigns.push(newCampaign);
-      localStorage.setItem("campaigns", JSON.stringify(campaigns));
+      const receipt = await createCampaignOnBlockchain({
+        title,
+        description,
+        goal: Number(targetAmount),
+        durationDays: Number(duration)
+      });
+
+      console.log("✅ Blockchain campaign created:", receipt);
+
+      // Obtener dirección de la nueva campaña del evento
+      const campaignCreatedEvent = receipt.logs.find((log: any) => {
+        try {
+          // Buscar el evento CampaignCreated
+          return log.topics[0] === "0x37bb6c1f723b45d67f1e74f38d0317e27d160a58f9efcf0dfd9b9d42c78eef5c";
+        } catch {
+          return false;
+        }
+      });
+
+      let newCampaignAddress = "";
+      if (campaignCreatedEvent) {
+        // Decodificar el evento para obtener la dirección
+        const iface = new ethers.Interface([
+          "event CampaignCreated(address campaignAddress, address creator, string title)"
+        ]);
+        const decoded = iface.parseLog(campaignCreatedEvent);
+        newCampaignAddress = decoded?.args.campaignAddress || "";
+        console.log("📦 New campaign address:", newCampaignAddress);
+      }
+
+      // ✅ NO guardar en localStorage - la campaña aparecerá automáticamente desde el blockchain
+      // Las campañas blockchain se cargan directamente del contrato, no necesitan localStorage
       
-      // Disparar evento para actualizar la UI
+      // Disparar evento para que el home recargue las campañas desde blockchain
       window.dispatchEvent(new CustomEvent('campaignsUpdated'));
       
-      toast.success("¡Campaña creada con éxito!", {
-        description: "Tu campaña ha sido creada y está lista para recibir donaciones.",
+      toast.success("¡Campaña creada en Blockchain!", {
+        description: `Contrato desplegado: ${newCampaignAddress ? newCampaignAddress.slice(0, 6) + '...' + newCampaignAddress.slice(-4) : 'Procesando...'}. Aparecerá automáticamente en el home.`,
         style: {
           background: "hsl(222, 13%, 14%)",
           border: "1px solid hsla(190, 95%, 39%, 0.4)",
@@ -521,11 +500,20 @@ export function CreateCampaignForm() {
                     Necesitas conectar tu wallet para crear la campaña. El botón te permitirá conectar automáticamente.
                   </p>
                 </div>
-              )}              {isConnected && account && (
+              )}              {isConnected && account && chainId === 1287 && (
                 <div className="mt-4 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
-                  <h3 className="font-medium mb-2 text-green-700 dark:text-green-300">Wallet conectada</h3>
+                  <h3 className="font-medium mb-2 text-green-700 dark:text-green-300">✅ Wallet conectada</h3>
                   <p className="text-sm text-green-600 dark:text-green-400">
-                    Conectado con: {account.slice(0, 6)}...{account.slice(-4)}
+                    Conectado con: {account.slice(0, 6)}...{account.slice(-4)} en Moonbase Alpha
+                  </p>
+                </div>
+              )}
+
+              {isConnected && account && chainId !== 1287 && (
+                <div className="mt-4 p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                  <h3 className="font-medium mb-2 text-orange-700 dark:text-orange-300">⚠️ Red incorrecta</h3>
+                  <p className="text-sm text-orange-600 dark:text-orange-400">
+                    Conectado a chainId {chainId}. Necesitas cambiar a Moonbase Alpha (1287) para crear campañas.
                   </p>
                 </div>
               )}
@@ -539,9 +527,12 @@ export function CreateCampaignForm() {
               </Button>
               <Button 
                 onClick={handleCreateCampaign} 
-                disabled={isLoading}
+                disabled={isLoading || (isConnected && chainId !== 1287)}
               >
-                {isLoading ? "Creando Campaña..." : !isConnected ? "Conectar Wallet y Crear" : "Crear Campaña"}
+                {isLoading ? "Creando Campaña..." : 
+                 !isConnected ? "Conectar Wallet y Crear" :
+                 chainId !== 1287 ? "⚠️ Red incorrecta" :
+                 "Crear Campaña"}
               </Button>
             </CardFooter>
           </Card>

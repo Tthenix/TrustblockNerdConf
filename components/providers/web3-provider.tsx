@@ -1,127 +1,116 @@
 "use client";
-
-import React, { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { ethers } from "ethers";
 
 // Declaración global para window.ethereum
 declare global {
   interface Window {
-    ethereum?: EthereumProvider;
+    ethereum?: any;
   }
 }
 
-// Interfaces para definir los tipos de Ethereum
-interface EthereumProvider {
-  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-  on: (event: string, callback: (...args: unknown[]) => void) => void;
-  removeListener: (event: string, callback: (...args: unknown[]) => void) => void;
-  removeAllListeners?: (event?: string) => void;
-}
-
 interface Web3ContextType {
-  provider: EthereumProvider | null;
-  signer: unknown | null;
+  provider: ethers.BrowserProvider | null;
+  signer: ethers.JsonRpcSigner | null;
   account: string | null;
+  chainId: number | null;
   isConnected: boolean;
   connectWallet: () => Promise<void>;
-  disconnectWallet: () => void;
-  chainId: number | null;
+  switchToMoonbase: () => Promise<void>;
 }
 
 const Web3Context = createContext<Web3ContextType | undefined>(undefined);
 
+const MOONBASE_ALPHA = {
+  chainId: '0x507', // 1287 en hex
+  chainName: 'Moonbase Alpha',
+  nativeCurrency: {
+    name: 'DEV',
+    symbol: 'DEV',
+    decimals: 18,
+  },
+  rpcUrls: ['https://rpc.api.moonbase.moonbeam.network'],
+  blockExplorerUrls: ['https://moonbase.moonscan.io/'],
+};
+
 export function Web3Provider({ children }: { children: React.ReactNode }) {
-  const [provider, setProvider] = useState<EthereumProvider | null>(null);
-  const [signer, setSigner] = useState<unknown | null>(null);
+  const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
+  const [signer, setSigner] = useState<ethers.JsonRpcSigner | null>(null);
   const [account, setAccount] = useState<string | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
   const [chainId, setChainId] = useState<number | null>(null);
 
   const connectWallet = async () => {
-    try {
-      if (typeof window !== "undefined" && window.ethereum) {
-        // Request access to accounts
-        const accounts = await window.ethereum.request({
-          method: "eth_requestAccounts",
-        }) as string[];
+    if (typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
+      try {
+        const browserProvider = new ethers.BrowserProvider(window.ethereum);
+        const accounts = await browserProvider.send("eth_requestAccounts", []);
+        const walletSigner = await browserProvider.getSigner();
+        const network = await browserProvider.getNetwork();
         
-        // Get network info
-        const chainIdResult = await window.ethereum.request({
-          method: "eth_chainId",
-        }) as string;
-        
+        setProvider(browserProvider);
+        setSigner(walletSigner);
         setAccount(accounts[0]);
-        setIsConnected(true);
-        setChainId(parseInt(chainIdResult, 16));
-
-        // Store connection state
-        localStorage.setItem("walletConnected", "true");
-      } else {
-        console.error("MetaMask not detected");
-        alert("Por favor instala MetaMask para usar esta aplicación");
+        setChainId(Number(network.chainId));
+        
+        console.log("Wallet connected:", accounts[0]);
+      } catch (error) {
+        console.error("Error connecting wallet:", error);
       }
-    } catch (error) {
-      console.error("Error connecting wallet:", error);
+    } else {
+      // Fallback para demo sin MetaMask
+      console.log("MetaMask not found, using demo mode");
+      setAccount("0x5eDA6c65a643fB4CEd205Df007eB99dBF9419216");
     }
   };
 
-  const disconnectWallet = () => {
-    setProvider(null);
-    setSigner(null);
-    setAccount(null);
-    setIsConnected(false);
-    setChainId(null);
-    localStorage.removeItem("walletConnected");
+  const switchToMoonbase = async () => {
+    if (typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: MOONBASE_ALPHA.chainId }],
+        });
+      } catch (switchError: any) {
+        if (switchError.code === 4902) {
+          try {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [MOONBASE_ALPHA],
+            });
+          } catch (addError) {
+            console.error("Error adding Moonbase network:", addError);
+          }
+        }
+      }
+    }
   };
+
   useEffect(() => {
-    // Auto-connect if previously connected
-    const wasConnected = localStorage.getItem("walletConnected");
-    if (wasConnected && typeof window !== "undefined" && window.ethereum) {
-      connectWallet();
-    }
+    // Auto-conectar
+    connectWallet();
 
-    // Listen for account changes
-    if (typeof window !== "undefined" && window.ethereum) {
-      const handleAccountsChanged = (accounts: unknown) => {
-        const accountsArray = accounts as string[];
-        if (accountsArray.length === 0) {
-          disconnectWallet();
-        } else {
-          setAccount(accountsArray[0]);
-        }
-      };
-
-      const handleChainChanged = (chainId: unknown) => {
-        const chainIdString = chainId as string;
-        setChainId(parseInt(chainIdString, 16));
-      };
-
-      window.ethereum.on("accountsChanged", handleAccountsChanged);
-      window.ethereum.on("chainChanged", handleChainChanged);
-
-      return () => {
-        if (typeof window !== "undefined" && window.ethereum) {
-          window.ethereum.removeListener("accountsChanged", handleAccountsChanged);
-          window.ethereum.removeListener("chainChanged", handleChainChanged);
-        }
-      };
+    if (typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
+      window.ethereum.on('accountsChanged', (accounts: string[]) => {
+        setAccount(accounts[0] || null);
+      });
+      
+      window.ethereum.on('chainChanged', (chainId: string) => {
+        setChainId(parseInt(chainId, 16));
+      });
     }
   }, []);
 
-  return (
-    <Web3Context.Provider
-      value={{
-        provider,
-        signer,
-        account,
-        isConnected,
-        connectWallet,
-        disconnectWallet,
-        chainId,
-      }}
-    >
-      {children}
-    </Web3Context.Provider>
-  );
+  const value = {
+    provider,
+    signer,
+    account,
+    chainId,
+    isConnected: !!account,
+    connectWallet,
+    switchToMoonbase,
+  };
+
+  return <Web3Context.Provider value={value}>{children}</Web3Context.Provider>;
 }
 
 export function useWeb3() {

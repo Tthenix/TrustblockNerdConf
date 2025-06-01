@@ -7,6 +7,8 @@ import { ArrowRight, Shield, Users, Wallet, LineChart } from "lucide-react";
 import { HeroSection } from "@/components/hero-section";
 import { FeatureCard } from "@/components/feature-card";
 import { CampaignCard } from "@/components/campaign-card";
+import { useBlockchainContracts } from "@/hooks/useBlockchainContracts";
+import { useWeb3 } from "@/components/providers/web3-provider";
 
 interface Campaign {
   id: string;
@@ -26,11 +28,15 @@ interface Campaign {
 }
 
 export default function Home() {
-  const [allCampaigns, setAllCampaigns] = useState<Campaign[]>([]);  const loadCampaigns = () => {
+  const [allCampaigns, setAllCampaigns] = useState<Campaign[]>([]);
+  const { getAllCampaigns, isConnected, loading } = useBlockchainContracts();
+  const { chainId, switchToMoonbase } = useWeb3();
+
+  const loadCampaigns = async () => {
     // Datos de ejemplo hardcodeados
     const featuredCampaigns = [
       {
-        id: "0",
+        id: "hardcoded-0",
         title: "Ayuda Urgente: Inundaciones en Bahía Blanca",
         organization: "Cruz Roja Argentina",
         description:
@@ -43,7 +49,7 @@ export default function Home() {
         featured: true
       },
       {
-        id: "1",
+        id: "hardcoded-1",
         title: "Reforestación Amazónica",
         organization: "EcoFuturo ONG",
         description:
@@ -55,7 +61,7 @@ export default function Home() {
         image: "/img/campana/Reforestación Amazónica.jpeg",
       },
       {
-        id: "2",
+        id: "hardcoded-2",
         title: "Energía Solar para Comunidades",
         organization: "SolarTech",
         description:
@@ -67,7 +73,7 @@ export default function Home() {
         image: "/img/campana/Energía Solar para Comunidades.jpg",
       },
       {
-        id: "3",
+        id: "hardcoded-3",
         title: "Educación Digital Inclusiva",
         organization: "FuturoDigital",
         description:
@@ -82,6 +88,28 @@ export default function Home() {
 
     // Obtener campañas del localStorage
     const savedCampaigns = JSON.parse(localStorage.getItem("campaigns") || "[]");
+    
+    // 🧹 Filtrar campañas locales que NO tengan campaignAddress (para evitar duplicados con blockchain)
+    const localOnlyCampaigns = savedCampaigns.filter((campaign: any) => !campaign.campaignAddress);
+    
+    // 🆕 Intentar cargar campañas desde blockchain si está conectado Y en la red correcta  
+    let blockchainCampaigns: Campaign[] = [];
+    if (isConnected && chainId === 1287) {
+      try {
+        console.log("🔗 Loading blockchain campaigns...");
+        console.log("🌐 Chain ID:", chainId);
+        console.log("📍 Expected Moonbase Alpha Chain ID: 1287");
+        
+        blockchainCampaigns = await getAllCampaigns();
+        console.log("✅ Loaded blockchain campaigns:", blockchainCampaigns);
+      } catch (error) {
+        console.error("❌ Error loading blockchain campaigns:", error);
+      }
+    } else if (isConnected && chainId !== 1287) {
+      console.log(`⚠️ Wallet connected to wrong network (${chainId}). Please switch to Moonbase Alpha (1287)`);
+    } else {
+      console.log("ℹ️ Wallet not connected, skipping blockchain campaigns");
+    }
     
     // Obtener donaciones adicionales para campañas hardcodeadas
     const hardcodedDonations = JSON.parse(localStorage.getItem("hardcodedCampaignDonations") || "{}");
@@ -99,15 +127,17 @@ export default function Home() {
       return campaign;
     });
     
-    // Combinar campañas guardadas primero (más recientes) con las hardcodeadas actualizadas
-    const combinedCampaigns = [...savedCampaigns, ...updatedFeaturedCampaigns];
+    // Combinar campañas: blockchain primero, luego solo las locales sin dirección de contrato, luego hardcodeadas
+    const combinedCampaigns = [...blockchainCampaigns, ...localOnlyCampaigns, ...updatedFeaturedCampaigns];
     
     // Tomar solo las primeras 6 para mostrar en el home
     setAllCampaigns(combinedCampaigns.slice(0, 6));
   };
 
   useEffect(() => {
-    loadCampaigns();    // Escuchar cambios en localStorage para actualizar automáticamente
+    loadCampaigns();
+    
+    // Escuchar cambios en localStorage para actualizar automáticamente
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'campaigns' || e.key === 'hardcodedCampaignDonations') {
         loadCampaigns();
@@ -132,11 +162,47 @@ export default function Home() {
       window.removeEventListener('campaignsUpdated', handleCustomStorageChange);
       window.removeEventListener('campaignDonationUpdated', handleDonationUpdate);
     };
-  }, []);
+  }, [isConnected, chainId]); // Agregar chainId como dependencia
 
   return (
     <main className="flex min-h-screen flex-col">
       <HeroSection />
+
+      {/* 🆕 Indicador de conexión blockchain */}
+      {isConnected && (
+        <div className="bg-darkblue/90 backdrop-blur-sm text-center py-3 border-b border-skyblue/20">
+          <p className="text-sm">
+            <span className="text-neonpink font-medium">✅ Conectado a Blockchain</span>
+            <span className="text-gray-300 ml-2">
+              - Red: {chainId === 1287 ? "✅ Moonbase Alpha" : `❌ Red incorrecta (${chainId})`}
+            </span>
+            <span className="text-gray-400 ml-2">
+              - Contrato: {`0x4f2C...af083`}
+            </span>
+            
+            {/* Mostrar botón para cambiar de red si es necesario */}
+            {chainId !== 1287 && (
+              <Button 
+                onClick={switchToMoonbase} 
+                size="sm" 
+                className="ml-4 bg-orange-500 hover:bg-orange-600 text-xs"
+              >
+                🔄 Cambiar a Moonbase Alpha
+              </Button>
+            )}
+            
+            {/* Botón de debug para cargar campañas */}
+            <Button 
+              onClick={loadCampaigns} 
+              disabled={loading || chainId !== 1287}
+              size="sm" 
+              className="ml-2 bg-neonpink/80 hover:bg-neonpink text-xs disabled:opacity-50"
+            >
+              {loading ? "Cargando..." : chainId === 1287 ? "🔄 Recargar Blockchain" : "⚠️ Red incorrecta"}
+            </Button>
+          </p>
+        </div>
+      )}
 
       {/* Sección de características */}
       <section className="py-16 px-4 md:px-6 bg-gradient-to-b from-background to-background/95">
