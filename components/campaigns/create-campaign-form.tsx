@@ -125,7 +125,7 @@ export function CreateCampaignForm() {
       }
     }
 
-    if (!title || !description || !targetAmount || !duration) {
+    if (!title || !organization || !description || !targetAmount || !duration) {
       toast.error("Error", {
         description: "Por favor completa todos los campos obligatorios",
         style: {
@@ -147,6 +147,7 @@ export function CreateCampaignForm() {
         title,
         description,
         image,
+        organization,
         goal: targetAmount,
         durationDays: Number(duration)
       });
@@ -155,6 +156,7 @@ export function CreateCampaignForm() {
         title,
         description,
         image,
+        organization,
         goal: targetAmount,
         durationDays: Number(duration)
       });

@@ -11,7 +11,8 @@ contract CampaignFactory {
     function createCampaign(
         string memory _title,
         string memory _description,
-        string memory _image, // NUEVO
+        string memory _image,
+        string memory _organization,
         uint256 _targetAmount,
         uint256 _durationInDays
     ) public {
@@ -21,7 +22,8 @@ contract CampaignFactory {
         Campaign newCampaign = new Campaign(
             _title,
             _description,
-            _image, // NUEVO
+            _image,
+            _organization,
             _targetAmount,
             _durationInDays
         );

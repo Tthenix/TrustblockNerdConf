@@ -7,6 +7,7 @@ contract Campaign {
         string title;
         string description;
         string image; // NUEVO
+        string organization;
         uint256 targetAmount;
         uint256 currentAmount;
         uint256 deadline;
@@ -26,6 +27,7 @@ contract Campaign {
         string memory _title,
         string memory _description,
         string memory _image, // NUEVO
+        string memory _organization,
         uint256 _targetAmount,
         uint256 _durationInDays
     ) {
@@ -33,6 +35,7 @@ contract Campaign {
             creator: msg.sender,
             title: _title,
             description: _description,
+            organization: _organization,
             image: _image, // NUEVO
             targetAmount: _targetAmount,
             currentAmount: 0,

@@ -4,11 +4,11 @@ import { useState } from "react";
 
 // ✅ Dirección del contrato CampaignFactory desplegado en Moonbase Alpha
 // NOTA: Esta dirección debe ser actualizada después de desplegar el contrato
-const CAMPAIGN_FACTORY_ADDRESS = "0xFA205Fc438A3e6B9134b609a6FC643149384203a";
+const CAMPAIGN_FACTORY_ADDRESS = "0x9778D20AB3D7Bb5995292e1aa44223FC2489ebf6";
 
 // ABIs de tus contratos
 const CAMPAIGN_FACTORY_ABI = [
-  "function createCampaign(string memory _title, string memory _description, string memory _image, uint256 _targetAmount, uint256 _durationInDays) external",
+  "function createCampaign(string memory _title, string memory _description, string memory _image, string memory _organization, uint256 _targetAmount, uint256 _durationInDays) external",
   "function deployedCampaigns(uint256) external view returns (address)",
   "function getCampaignsCount() external view returns (uint256)",
   "function getDeployedCampaigns() external view returns (address[])",
@@ -32,6 +32,11 @@ const CAMPAIGN_ABI =
 					{
 						"internalType": "string",
 						"name": "_image",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "_organization",
 						"type": "string"
 					},
 					{
@@ -121,6 +126,11 @@ const CAMPAIGN_ABI =
 					{
 						"internalType": "string",
 						"name": "image",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "organization",
 						"type": "string"
 					},
 					{
@@ -224,6 +234,11 @@ const CAMPAIGN_ABI =
 								"type": "string"
 							},
 							{
+								"internalType": "string",
+								"name": "organization",
+								"type": "string"
+							},
+							{
 								"internalType": "uint256",
 								"name": "targetAmount",
 								"type": "uint256"
@@ -318,6 +333,7 @@ export function useBlockchainContracts() {
     title: string;
     description: string;
     image: string;
+    organization: string;
     goal: string;
     durationDays: number;
   }) => {
@@ -342,6 +358,7 @@ export function useBlockchainContracts() {
         title: campaignData.title,
         description: campaignData.description,
         image: campaignData.image,
+        organization: campaignData.organization,
         targetAmount: targetAmountWei,
         durationInDays: campaignData.durationDays
       });
@@ -357,6 +374,7 @@ export function useBlockchainContracts() {
           campaignData.title,
           campaignData.description,
           campaignData.image,
+          campaignData.organization,
           targetAmountWei,
           campaignData.durationDays
         );
@@ -371,6 +389,7 @@ export function useBlockchainContracts() {
         campaignData.title,
         campaignData.description,
         campaignData.image,
+        campaignData.organization,
         targetAmountWei,
         campaignData.durationDays
       );
@@ -448,6 +467,7 @@ export function useBlockchainContracts() {
               title,
               description,
               image,
+              organization,
               targetAmount,
               currentAmount: amountRaised,
               deadline,
@@ -465,7 +485,7 @@ export function useBlockchainContracts() {
             const contributors = await campaign.getContributors();
             const contributersCount = contributors.length;
 
-            // 🎨 Generar datos más atractivos para la campaña blockchain
+            // 🎨 Array de imágenes para campañas blockchain
             const blockchainImages = [
               "/img/campana/blockchain-campaign.jpg",
               "/img/campana/52242f9a-f563-4e47-b21a-83ef501c00e6.jpeg",
@@ -473,11 +493,6 @@ export function useBlockchainContracts() {
               "/img/campana/Energía Solar para Comunidades.jpg",
               "/img/campana/Educación Digital Inclusiva.jpg"
             ];
-            
-            // Generar nombres de organización más amigables
-            const organizationName = title.includes("test") || title.includes("Test") 
-              ? "Organización Blockchain" 
-              : `${creator.slice(0, 6)}...${creator.slice(-4)}`;
 
             // 🖼️ Para campañas de prueba/test usar imagen genérica, 
             // para campañas reales usar la imagen rotativa
@@ -497,7 +512,7 @@ export function useBlockchainContracts() {
               // ✅ Formato EXACTO como las campañas de ejemplo
               id: campaignAddress,
               title,
-              organization: organizationName,
+              organization: organization || "TrustBlock Foundation",
               description,
               raised: raisedAmountEther,
               goal: targetAmountEther,
@@ -586,6 +601,7 @@ export function useBlockchainContracts() {
         title,
         description,
         image,
+        organization,
         targetAmount,
         currentAmount: amountRaised,
         deadline,
@@ -613,9 +629,7 @@ export function useBlockchainContracts() {
         creator,
         contributersCount,
         id: campaignAddress,
-        organization: title.includes("test") || title.includes("Test") 
-          ? "Organización Blockchain" 
-          : `${creator.slice(0, 6)}...${creator.slice(-4)}`,
+        organization: organization || "TrustBlock Foundation",
         raised: raisedAmountEther,
         goal: targetAmountEther,
         backers: contributersCount,
