@@ -2,9 +2,24 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 
+// Declaración global para window.ethereum
+declare global {
+  interface Window {
+    ethereum?: EthereumProvider;
+  }
+}
+
+// Interfaces para definir los tipos de Ethereum
+interface EthereumProvider {
+  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+  on: (event: string, callback: (...args: unknown[]) => void) => void;
+  removeListener: (event: string, callback: (...args: unknown[]) => void) => void;
+  removeAllListeners?: (event?: string) => void;
+}
+
 interface Web3ContextType {
-  provider: any | null;
-  signer: any | null;
+  provider: EthereumProvider | null;
+  signer: unknown | null;
   account: string | null;
   isConnected: boolean;
   connectWallet: () => Promise<void>;
@@ -15,8 +30,8 @@ interface Web3ContextType {
 const Web3Context = createContext<Web3ContextType | undefined>(undefined);
 
 export function Web3Provider({ children }: { children: React.ReactNode }) {
-  const [provider, setProvider] = useState<any | null>(null);
-  const [signer, setSigner] = useState<any | null>(null);
+  const [provider, setProvider] = useState<EthereumProvider | null>(null);
+  const [signer, setSigner] = useState<unknown | null>(null);
   const [account, setAccount] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [chainId, setChainId] = useState<number | null>(null);
@@ -27,16 +42,16 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
         // Request access to accounts
         const accounts = await window.ethereum.request({
           method: "eth_requestAccounts",
-        });
+        }) as string[];
         
         // Get network info
-        const chainId = await window.ethereum.request({
+        const chainIdResult = await window.ethereum.request({
           method: "eth_chainId",
-        });
+        }) as string;
         
         setAccount(accounts[0]);
         setIsConnected(true);
-        setChainId(parseInt(chainId, 16));
+        setChainId(parseInt(chainIdResult, 16));
 
         // Store connection state
         localStorage.setItem("walletConnected", "true");
@@ -57,7 +72,6 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
     setChainId(null);
     localStorage.removeItem("walletConnected");
   };
-
   useEffect(() => {
     // Auto-connect if previously connected
     const wasConnected = localStorage.getItem("walletConnected");
@@ -67,25 +81,30 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
 
     // Listen for account changes
     if (typeof window !== "undefined" && window.ethereum) {
-      window.ethereum.on("accountsChanged", (accounts: string[]) => {
-        if (accounts.length === 0) {
+      const handleAccountsChanged = (accounts: unknown) => {
+        const accountsArray = accounts as string[];
+        if (accountsArray.length === 0) {
           disconnectWallet();
         } else {
-          setAccount(accounts[0]);
+          setAccount(accountsArray[0]);
         }
-      });
+      };
 
-      window.ethereum.on("chainChanged", (chainId: string) => {
-        setChainId(parseInt(chainId, 16));
-      });
+      const handleChainChanged = (chainId: unknown) => {
+        const chainIdString = chainId as string;
+        setChainId(parseInt(chainIdString, 16));
+      };
+
+      window.ethereum.on("accountsChanged", handleAccountsChanged);
+      window.ethereum.on("chainChanged", handleChainChanged);
+
+      return () => {
+        if (typeof window !== "undefined" && window.ethereum) {
+          window.ethereum.removeListener("accountsChanged", handleAccountsChanged);
+          window.ethereum.removeListener("chainChanged", handleChainChanged);
+        }
+      };
     }
-
-    return () => {
-      if (typeof window !== "undefined" && window.ethereum) {
-        window.ethereum.removeAllListeners("accountsChanged");
-        window.ethereum.removeAllListeners("chainChanged");
-      }
-    };
   }, []);
 
   return (

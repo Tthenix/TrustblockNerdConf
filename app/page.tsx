@@ -8,8 +8,25 @@ import { HeroSection } from "@/components/hero-section";
 import { FeatureCard } from "@/components/feature-card";
 import { CampaignCard } from "@/components/campaign-card";
 
+interface Campaign {
+  id: string;
+  title: string;
+  organization: string;
+  description: string;
+  raised: number;
+  goal: number;
+  backers: number;
+  daysLeft: number;
+  image: string;
+  featured?: boolean;
+  verified?: boolean;
+  category?: string;
+  location?: string;
+  website?: string;
+}
+
 export default function Home() {
-  const [allCampaigns, setAllCampaigns] = useState<any[]>([]);
+  const [allCampaigns, setAllCampaigns] = useState<Campaign[]>([]);
   const loadCampaigns = () => {
     // Datos de ejemplo hardcodeados
     const featuredCampaigns = [

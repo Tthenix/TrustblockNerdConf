@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useContracts } from "@/hooks/useContracts";
 import { useWeb3 } from "@/components/providers/web3-provider";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,18 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+
+interface StoredCampaign {
+  id: string;
+  title: string;
+  organization: string;
+  description: string;
+  goal: number;
+  image: string;
+  category: string;
+  location: string;
+  website: string;
+}
 
 export function CreateCampaignForm() {
   const [title, setTitle] = useState("");
@@ -57,10 +70,10 @@ export function CreateCampaignForm() {
         targetAmount,
         parseInt(duration)
       );      // Generar un id único para la campaña
-      const campaigns = JSON.parse(localStorage.getItem("campaigns") || "[]");
+      const campaigns: StoredCampaign[] = JSON.parse(localStorage.getItem("campaigns") || "[]");
       // Generar ID único considerando que las campañas hardcodeadas van del 0 al 9
       const maxId = Math.max(
-        ...campaigns.map((c: any) => parseInt(c.id) || 0),
+        ...campaigns.map((c: StoredCampaign) => parseInt(c.id) || 0),
         9 // Las campañas hardcodeadas usan IDs del 0-9
       );
       const newId = (maxId + 1).toString();
@@ -125,21 +138,22 @@ export function CreateCampaignForm() {
       setLocation("");
       setWebsite("");
       setImage("");
-      setImageFile(null);
-      // Limpiar el input file
+      setImageFile(null);      // Limpiar el input file
       const fileInput = document.getElementById('imageFile') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error:", error);
       
       let errorMessage = "Error al crear la campaña. Por favor intenta de nuevo.";
       
-      if (error.message?.includes("User rejected")) {
-        errorMessage = "Transacción cancelada por el usuario.";
-      } else if (error.message?.includes("Wallet not connected")) {
-        errorMessage = "Wallet no conectada. Por favor conecta tu wallet.";
-      } else if (error.message?.includes("insufficient funds")) {
-        errorMessage = "Fondos insuficientes para pagar el gas de la transacción.";
+      if (error instanceof Error) {
+        if (error.message?.includes("User rejected")) {
+          errorMessage = "Transacción cancelada por el usuario.";
+        } else if (error.message?.includes("Wallet not connected")) {
+          errorMessage = "Wallet no conectada. Por favor conecta tu wallet.";
+        } else if (error.message?.includes("insufficient funds")) {
+          errorMessage = "Fondos insuficientes para pagar el gas de la transacción.";
+        }
       }
       
       alert(errorMessage);
@@ -250,13 +264,14 @@ export function CreateCampaignForm() {
                     className="mt-1"
                   />
                 </div>
-              </div>
-              {image && (
+              </div>              {image && (
                 <div className="mt-3">
                   <p className="text-sm text-muted-foreground mb-2">Vista previa:</p>
-                  <img 
+                  <Image 
                     src={image} 
                     alt="Vista previa" 
+                    width={400}
+                    height={192}
                     className="w-full max-w-md h-48 object-cover rounded-lg border"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
