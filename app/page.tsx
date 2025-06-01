@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Shield, Users, Wallet, LineChart } from "lucide-react";
 import { HeroSection } from "@/components/hero-section";
@@ -8,58 +9,95 @@ import { FeatureCard } from "@/components/feature-card";
 import { CampaignCard } from "@/components/campaign-card";
 
 export default function Home() {
-  // Datos de ejemplo para campañas destacadas
-  const featuredCampaigns = [
-    {
-      id: "0",
-      title: "Ayuda Urgente: Inundaciones en Bahía Blanca",
-      organization: "Cruz Roja Argentina",
-      description:
-        "Campaña de emergencia para asistir a las familias afectadas por las graves inundaciones en Bahía Blanca y zonas aledañas.",
-      raised: 8500,
-      goal: 50000,
-      backers: 106,
-      daysLeft: 10,
-      image: "/img/campana/52242f9a-f563-4e47-b21a-83ef501c00e6.jpeg",
-      featured: true
-    },
-    {
-      id: "1",
-      title: "Reforestación Amazónica",
-      organization: "EcoFuturo ONG",
-      description:
-        "Proyecto para plantar 10,000 árboles nativos en zonas deforestadas de la Amazonía.",
-      raised: 15000,
-      goal: 25000,
-      backers: 128,
-      daysLeft: 15,
-      image: "/img/campana/Reforestación Amazónica.jpeg",
-    },
-    {
-      id: "2",
-      title: "Energía Solar para Comunidades",
-      organization: "SolarTech",
-      description:
-        "Instalación de paneles solares en 5 comunidades rurales sin acceso a electricidad.",
-      raised: 8500,
-      goal: 20000,
-      backers: 74,
-      daysLeft: 21,
-      image: "/img/campana/Energía Solar para Comunidades.jpg",
-    },
-    {
-      id: "3",
-      title: "Educación Digital Inclusiva",
-      organization: "FuturoDigital",
-      description:
-        "Programa de capacitación en tecnología para jóvenes de bajos recursos.",
-      raised: 12000,
-      goal: 15000,
-      backers: 95,
-      daysLeft: 7,
-      image: "/img/campana/Educación Digital Inclusiva.jpg",
-    },
-  ];
+  const [allCampaigns, setAllCampaigns] = useState<any[]>([]);
+  const loadCampaigns = () => {
+    // Datos de ejemplo hardcodeados
+    const featuredCampaigns = [
+      {
+        id: "0",
+        title: "Ayuda Urgente: Inundaciones en Bahía Blanca",
+        organization: "Cruz Roja Argentina",
+        description:
+          "Campaña de emergencia para asistir a las familias afectadas por las graves inundaciones en Bahía Blanca y zonas aledañas.",
+        raised: 8500,
+        goal: 50000,
+        backers: 106,
+        daysLeft: 10,
+        image: "/img/campana/52242f9a-f563-4e47-b21a-83ef501c00e6.jpeg",
+        featured: true
+      },
+      {
+        id: "1",
+        title: "Reforestación Amazónica",
+        organization: "EcoFuturo ONG",
+        description:
+          "Proyecto para plantar 10,000 árboles nativos en zonas deforestadas de la Amazonía.",
+        raised: 15000,
+        goal: 25000,
+        backers: 128,
+        daysLeft: 15,
+        image: "/img/campana/Reforestación Amazónica.jpeg",
+      },
+      {
+        id: "2",
+        title: "Energía Solar para Comunidades",
+        organization: "SolarTech",
+        description:
+          "Instalación de paneles solares en 5 comunidades rurales sin acceso a electricidad.",
+        raised: 8500,
+        goal: 20000,
+        backers: 74,
+        daysLeft: 21,
+        image: "/img/campana/Energía Solar para Comunidades.jpg",
+      },
+      {
+        id: "3",
+        title: "Educación Digital Inclusiva",
+        organization: "FuturoDigital",
+        description:
+          "Programa de capacitación en tecnología para jóvenes de bajos recursos.",
+        raised: 12000,
+        goal: 15000,
+        backers: 95,
+        daysLeft: 7,
+        image: "/img/campana/Educación Digital Inclusiva.jpg",
+      },
+    ];
+
+    // Obtener campañas del localStorage
+    const savedCampaigns = JSON.parse(localStorage.getItem("campaigns") || "[]");
+    
+    // Combinar campañas guardadas primero (más recientes) con las hardcodeadas
+    const combinedCampaigns = [...savedCampaigns, ...featuredCampaigns];
+    
+    // Tomar solo las primeras 6 para mostrar en el home
+    setAllCampaigns(combinedCampaigns.slice(0, 6));
+  };
+
+  useEffect(() => {
+    loadCampaigns();
+
+    // Escuchar cambios en localStorage para actualizar automáticamente
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'campaigns') {
+        loadCampaigns();
+      }
+    };
+
+    // Escuchar eventos de storage para cambios desde otras pestañas
+    window.addEventListener('storage', handleStorageChange);
+
+    // Escuchar evento customizado para cambios en la misma pestaña
+    const handleCustomStorageChange = () => {
+      loadCampaigns();
+    };
+    window.addEventListener('campaignsUpdated', handleCustomStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('campaignsUpdated', handleCustomStorageChange);
+    };
+  }, []);
 
   return (
     <main className="flex min-h-screen flex-col">
@@ -114,9 +152,8 @@ export default function Home() {
                 Ver todas <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredCampaigns.map((campaign) => (
+          </div>          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {allCampaigns.map((campaign) => (
               <CampaignCard key={campaign.id} campaign={campaign} />
             ))}
           </div>

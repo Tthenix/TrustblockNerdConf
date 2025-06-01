@@ -64,8 +64,10 @@ export default function CampaignDetailPage() {
   const campaignId = params?.id as string;
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
   useEffect(() => {
+    // Obtener campañas del localStorage
+    const savedCampaigns = JSON.parse(localStorage.getItem("campaigns") || "[]");
+    
     // Datos de campañas (en una implementación real, estos vendrían de una API o blockchain)
     const campaignsData: Campaign[] = [
       {
@@ -359,12 +361,14 @@ export default function CampaignDetailPage() {
             to: "Imprenta Sostenible",
             status: "completed",
           }
-        ],
-      },
+        ],      },
       // Aquí irían las demás campañas...
     ];
 
-    const campaign = campaignsData.find((c) => c.id === campaignId) || campaignsData[0];
+    // Combinar campañas hardcodeadas con las guardadas en localStorage
+    const allCampaigns = [...savedCampaigns, ...campaignsData];
+
+    const campaign = allCampaigns.find((c) => c.id === campaignId) || campaignsData[0];
     setCampaign(campaign);
     setIsLoading(false);
   }, [campaignId]);

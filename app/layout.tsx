@@ -5,6 +5,7 @@ import "./globals.css";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { ToastProvider } from "@/components/ui/toast-provider";
+import { Web3Provider } from "@/components/providers/web3-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,14 +27,14 @@ export default function RootLayout({
   return (
     <html lang="es" className="dark">
       <body className={inter.className}>
-        {/* <ThemeToggle attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange> */}
-        <div className="flex min-h-screen flex-col">
-          <Navbar />
-          <div className="flex-1">{children}</div>
-          <Footer />
-        </div>
-        <ToastProvider />
-        {/* </ThemeToggle> */}
+        <Web3Provider>
+          <div className="flex min-h-screen flex-col">
+            <Navbar />
+            <div className="flex-1">{children}</div>
+            <Footer />
+          </div>
+          <ToastProvider />
+        </Web3Provider>
       </body>
     </html>
   );
