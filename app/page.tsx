@@ -1,65 +1,202 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Shield, Users, Wallet, LineChart } from "lucide-react";
 import { HeroSection } from "@/components/hero-section";
 import { FeatureCard } from "@/components/feature-card";
 import { CampaignCard } from "@/components/campaign-card";
+import { useBlockchainContracts } from "@/hooks/useBlockchainContracts";
+import { useWeb3 } from "@/components/providers/web3-provider";
+
+interface Campaign {
+  id: string;
+  title: string;
+  organization: string;
+  description: string;
+  raised: number;
+  goal: number;
+  backers: number;
+  daysLeft: number;
+  image: string;
+  featured?: boolean;
+  verified?: boolean;
+  category?: string;
+  location?: string;
+  website?: string;
+  isBlockchain?: boolean;
+  address?: string;
+}
 
 export default function Home() {
-  // Datos de ejemplo para campañas destacadas
-  const featuredCampaigns = [
-    {
-      id: "0",
-      title: "Ayuda Urgente: Inundaciones en Bahía Blanca",
-      organization: "Cruz Roja Argentina",
-      description:
-        "Campaña de emergencia para asistir a las familias afectadas por las graves inundaciones en Bahía Blanca y zonas aledañas.",
-      raised: 8500,
-      goal: 50000,
-      backers: 106,
-      daysLeft: 10,
-      image: "/img/campana/52242f9a-f563-4e47-b21a-83ef501c00e6.jpeg",
-      featured: true
-    },
-    {
-      id: "1",
-      title: "Reforestación Amazónica",
-      organization: "EcoFuturo ONG",
-      description:
-        "Proyecto para plantar 10,000 árboles nativos en zonas deforestadas de la Amazonía.",
-      raised: 15000,
-      goal: 25000,
-      backers: 128,
-      daysLeft: 15,
-      image: "/img/campana/Reforestación Amazónica.jpeg",
-    },
-    {
-      id: "2",
-      title: "Energía Solar para Comunidades",
-      organization: "SolarTech",
-      description:
-        "Instalación de paneles solares en 5 comunidades rurales sin acceso a electricidad.",
-      raised: 8500,
-      goal: 20000,
-      backers: 74,
-      daysLeft: 21,
-      image: "/img/campana/Energía Solar para Comunidades.jpg",
-    },
-    {
-      id: "3",
-      title: "Educación Digital Inclusiva",
-      organization: "FuturoDigital",
-      description:
-        "Programa de capacitación en tecnología para jóvenes de bajos recursos.",
-      raised: 12000,
-      goal: 15000,
-      backers: 95,
-      daysLeft: 7,
-      image: "/img/campana/Educación Digital Inclusiva.jpg",
-    },
-  ];
+  const [allCampaigns, setAllCampaigns] = useState<Campaign[]>([]);
+  const { getAllCampaigns, isConnected } = useBlockchainContracts();
+  const { chainId } = useWeb3();
+
+  const loadCampaigns = useCallback(async () => {
+    // Datos de ejemplo hardcodeados
+    const featuredCampaigns = [
+      {
+        id: "hardcoded-0",
+        title: "Ayuda Urgente: Inundaciones en Bahía Blanca",
+        organization: "Cruz Roja Argentina",
+        description:
+          "Campaña de emergencia para asistir a las familias afectadas por las graves inundaciones en Bahía Blanca y zonas aledañas.",
+        raised: 8500,
+        goal: 50000,
+        backers: 106,
+        daysLeft: 10,
+        image: "/img/campana/52242f9a-f563-4e47-b21a-83ef501c00e6.jpeg",
+        featured: true,
+        isBlockchain: true,
+        address: "0xCF4A2C47B8B8C4E2FfE8EcD2c4c4B9B4A8B4C4D2E4F",
+        verified: true,
+        category: "Ayuda Humanitaria",
+        location: "Bahía Blanca, Argentina",
+        website: "https://cruzroja.org.ar"
+      },
+      {
+        id: "hardcoded-1",
+        title: "Reforestación Amazónica",
+        organization: "EcoFuturo ONG",
+        description:
+          "Proyecto para plantar 10,000 árboles nativos en zonas deforestadas de la Amazonía.",
+        raised: 15000,
+        goal: 25000,
+        backers: 128,
+        daysLeft: 15,
+        image: "/img/campana/Reforestación Amazónica.jpeg",
+        isBlockchain: true,
+        address: "0xA8F5B2E7C3D9F1E4B7A2C5D8F3E6B9A2C5D8F3E6B",
+        verified: true,
+        category: "Medio Ambiente",
+        location: "Amazonía, Brasil",
+        website: "https://ecofuturo.org"
+      },
+      {
+        id: "hardcoded-2",
+        title: "Energía Solar para Comunidades",
+        organization: "SolarTech",
+        description:
+          "Instalación de paneles solares en 5 comunidades rurales sin acceso a electricidad.",
+        raised: 8500,
+        goal: 20000,
+        backers: 74,
+        daysLeft: 21,
+        image: "/img/campana/Energía Solar para Comunidades.jpg",
+        isBlockchain: true,
+        address: "0xB3F7E9A5C2D8F4B7E1A4C7D0F3B6E9A2C5D8F3E6B",
+        verified: true,
+        category: "Tecnología",
+        location: "Comunidades Rurales",
+        website: "https://solartech.org"
+      },
+      {
+        id: "hardcoded-3",
+        title: "Educación Digital Inclusiva",
+        organization: "FuturoDigital",
+        description:
+          "Programa de capacitación en tecnología para jóvenes de bajos recursos.",
+        raised: 12000,
+        goal: 15000,
+        backers: 95,
+        daysLeft: 7,
+        image: "/img/campana/Educación Digital Inclusiva.jpg",
+        isBlockchain: true,
+        address: "0xD6E8F2B4A7C1E5F8B2A5C8E1F4B7A1C4E7F0B3A6",
+        verified: true,
+        category: "Educación",
+        location: "Múltiples Ciudades",
+        website: "https://futurodigital.org"
+      },
+    ];
+
+    // Obtener campañas del localStorage
+    const savedCampaigns = JSON.parse(localStorage.getItem("campaigns") || "[]");
+    
+    // 🧹 Filtrar campañas locales que NO tengan campaignAddress (para evitar duplicados con blockchain)
+    const localOnlyCampaigns = savedCampaigns.filter((campaign: Campaign) => !('campaignAddress' in campaign));
+    
+    // 🆕 Intentar cargar campañas desde blockchain si está conectado Y en la red correcta  
+    let blockchainCampaigns: Campaign[] = [];
+    if (isConnected && chainId === 1287) {
+      try {
+        console.log("🔗 Loading blockchain campaigns...");
+        console.log("🌐 Chain ID:", chainId);
+        console.log("📍 Expected Moonbase Alpha Chain ID: 1287");
+        
+        const rawBlockchainCampaigns = await getAllCampaigns();
+        
+        // Convert blockchain campaigns to match local Campaign interface
+        blockchainCampaigns = rawBlockchainCampaigns.map(campaign => ({
+          ...campaign,
+          raised: parseFloat(campaign.raised),
+          goal: parseFloat(campaign.goal)
+        }));
+        
+        console.log("✅ Loaded blockchain campaigns:", blockchainCampaigns);
+      } catch (error) {
+        console.error("❌ Error loading blockchain campaigns:", error);
+      }
+    } else if (isConnected && chainId !== 1287) {
+      console.log(`⚠️ Wallet connected to wrong network (${chainId}). Please switch to Moonbase Alpha (1287)`);
+    } else {
+      console.log("ℹ️ Wallet not connected, skipping blockchain campaigns");
+    }
+    
+    // Obtener donaciones adicionales para campañas hardcodeadas
+    const hardcodedDonations = JSON.parse(localStorage.getItem("hardcodedCampaignDonations") || "{}");
+    
+    // Actualizar campañas hardcodeadas con donaciones adicionales
+    const updatedFeaturedCampaigns = featuredCampaigns.map(campaign => {
+      const donations = hardcodedDonations[campaign.id];
+      if (donations) {
+        return {
+          ...campaign,
+          raised: campaign.raised + donations.raised,
+          backers: campaign.backers + donations.backers
+        };
+      }
+      return campaign;
+    });
+    
+    // Combinar campañas: blockchain primero, luego solo las locales sin dirección de contrato, luego hardcodeadas
+    const combinedCampaigns = [...blockchainCampaigns, ...localOnlyCampaigns, ...updatedFeaturedCampaigns];
+    
+    // Tomar solo las primeras 6 para mostrar en el home
+    setAllCampaigns(combinedCampaigns.slice(0, 6));
+  }, [isConnected, chainId, getAllCampaigns]);
+
+  useEffect(() => {
+    loadCampaigns();
+    
+    // Escuchar cambios en localStorage para actualizar automáticamente
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'campaigns' || e.key === 'hardcodedCampaignDonations') {
+        loadCampaigns();
+      }
+    };
+
+    // Escuchar eventos de storage para cambios desde otras pestañas
+    window.addEventListener('storage', handleStorageChange);    // Escuchar evento customizado para cambios en la misma pestaña
+    const handleCustomStorageChange = () => {
+      loadCampaigns();
+    };
+    
+    const handleDonationUpdate = () => {
+      loadCampaigns();
+    };
+    
+    window.addEventListener('campaignsUpdated', handleCustomStorageChange);
+    window.addEventListener('campaignDonationUpdated', handleDonationUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('campaignsUpdated', handleCustomStorageChange);
+      window.removeEventListener('campaignDonationUpdated', handleDonationUpdate);
+    };
+  }, [loadCampaigns]);
 
   return (
     <main className="flex min-h-screen flex-col">
@@ -114,9 +251,8 @@ export default function Home() {
                 Ver todas <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredCampaigns.map((campaign) => (
+          </div>          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {allCampaigns.map((campaign) => (
               <CampaignCard key={campaign.id} campaign={campaign} />
             ))}
           </div>

@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
+import { useWeb3 } from "@/components/providers/web3-provider"
+import { useBlockchainContracts } from "@/hooks/useBlockchainContracts"
 
 interface DonationFormProps {
   campaignId: string
@@ -16,75 +18,78 @@ interface DonationFormProps {
 export function DonationForm({ campaignId }: DonationFormProps) {
   const [amount, setAmount] = useState("")
   const [isAnonymous, setIsAnonymous] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isWalletConnected, setIsWalletConnected] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const { donateToBlockchainCampaign } = useBlockchainContracts()
+  const { isConnected, account } = useWeb3()
 
   const handleDonate = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!amount || parseFloat(amount) <= 0) {
+      toast.error("Por favor ingresa un monto válido")
+      return
+    }
 
-    if (!amount) return
+    if (!isConnected) {
+      toast.error("Por favor conecta tu wallet")
+      return
+    }
 
-    setIsSubmitting(true)
-
+    setIsLoading(true)
+    
     try {
-      // Simulación de transacción blockchain
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      const tx = await donateToBlockchainCampaign(campaignId, amount)
+      console.log("Donation transaction:", tx)
+      
+      toast.success("¡Donación exitosa!", {
+        description: `Has donado ${amount} DOT a esta campaña`,
+      })
 
-      // Aquí iría la lógica real de transacción con Polkadot.js
-      console.log(`Donación de ${amount} DOT a la campaña ${campaignId}`)
-
-      // Resetear formulario
+      // Limpiar formulario
       setAmount("")
       setIsAnonymous(false)
-
-      // Mostrar toast de éxito con mejor estilo
-      toast.success("¡Donación realizada con éxito!", {
-        description: `Has donado ${amount} DOT a esta campaña. ¡Gracias por tu apoyo!`,
-        style: {
-          background: "hsl(222, 13%, 14%)", // Mismo color de fondo que la página
-          border: "1px solid hsla(190, 95%, 39%, 0.4)",
-          color: "white",
-          fontWeight: "500", // Texto más claro y legible
-        },
-        descriptionClassName: "!text-white", // Forzar color blanco
-        icon: "✓",
-      })
-    } catch (error) {
-      console.error("Error al procesar donación:", error)
       
-      // Mostrar toast de error con mejor estilo
-      toast.error("Error al procesar donación", {
-        description: "Hubo un problema al procesar tu donación. Por favor intenta de nuevo.",
-        style: {
-          background: "hsl(222, 13%, 14%)", // Mismo color de fondo que la página
-          border: "1px solid hsla(326, 100%, 74%, 0.4)",
-          color: "white",
-          fontWeight: "500", // Texto más claro y legible
-        },
-        descriptionClassName: "!text-white", // Forzar color blanco
-        icon: "✕",
+      // Disparar evento para actualizar las campañas
+      window.dispatchEvent(new CustomEvent('campaignDonationUpdated'))
+      
+    } catch (error: unknown) {
+      console.error("Error donating:", error)
+      toast.error("Error al procesar la donación", {
+        description: error instanceof Error ? error.message : "Error desconocido"
       })
     } finally {
-      setIsSubmitting(false)
+      setIsLoading(false)
     }
   }
 
-  const presetAmounts = [1, 5, 10, 15]
+  const presetAmounts = [0.1, 0.5, 1, 5]
 
-  // Simulación de wallet conectado para demo
-  const handleConnectWallet = () => {
-    setIsWalletConnected(true)
-  }
-
-  if (!isWalletConnected) {
+  if (!isConnected) {
     return (
       <div className="text-center">
         <p className="mb-4 text-muted-foreground">Conecta tu wallet para donar a este proyecto</p>
         <Button
-          onClick={handleConnectWallet}
+          onClick={() => window.ethereum?.request({ method: 'eth_requestAccounts' })}
           className="w-full bg-skyblue hover:bg-skyblue/80 transition-colors hover-scale"
         >
           Conectar Wallet
+        </Button>
+      </div> 
+    )
+  }
+
+  if (account !== "0x0000000000000000000000000000000000000000") {
+    return (
+      <div className="text-center">
+        <p className="mb-4 text-muted-foreground">Por favor, cambia a la red Moonbase Alpha para realizar donaciones</p>
+        <Button
+          onClick={() => window.ethereum?.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: '0x507' }], // 1287 en hexadecimal
+          })}
+          className="w-full bg-skyblue hover:bg-skyblue/80 transition-colors hover-scale"
+        >
+          Cambiar a Moonbase Alpha
         </Button>
       </div>
     )
@@ -98,8 +103,8 @@ export function DonationForm({ campaignId }: DonationFormProps) {
           <Input
             id="amount"
             type="number"
-            min="1"
-            step="1"
+            min="0.01"
+            step="0.01"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="Ingresa la cantidad"
@@ -138,9 +143,9 @@ export function DonationForm({ campaignId }: DonationFormProps) {
         <Button
           type="submit"
           className="w-full bg-neonpink hover:bg-neonpink/80 transition-colors hover-scale"
-          disabled={isSubmitting || !amount}
+          disabled={isLoading || !amount}
         >
-          {isSubmitting ? "Procesando..." : "Donar Ahora"}
+          {isLoading ? "Procesando..." : "Donar Ahora"}
         </Button>
 
         <p className="text-xs text-center text-muted-foreground">

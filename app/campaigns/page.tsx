@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CampaignCard } from "@/components/campaign-card";
@@ -13,12 +14,35 @@ import {
 } from "@/components/ui/select";
 import { Search, Filter } from "lucide-react";
 import Link from "next/link";
+import { useWeb3 } from "@/components/providers/web3-provider";
+import { useBlockchainContracts } from "@/hooks/useBlockchainContracts";
+
+interface Campaign {
+  id: string;
+  title: string;
+  organization: string;
+  description: string;
+  raised: number;
+  goal: number;
+  backers: number;
+  daysLeft: number;
+  image: string;
+  featured?: boolean;
+  isBlockchain?: boolean;
+  address?: string;
+}
 
 export default function CampaignsPage() {
-  // Datos de ejemplo para campañas
-  const campaigns = [
+  const { isConnected, chainId } = useWeb3();
+  const { getAllCampaigns } = useBlockchainContracts();
+  
+  const [allCampaigns, setAllCampaigns] = useState<Campaign[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Move mockCampaigns outside component or memoize it to prevent recreation
+  const mockCampaigns: Campaign[] = useMemo(() => [
     {
-      id: "0",
+      id: "mock-0",
       title: "Ayuda Urgente: Inundaciones en Bahía Blanca",
       organization: "Cruz Roja Argentina",
       description:
@@ -28,10 +52,12 @@ export default function CampaignsPage() {
       backers: 106,
       daysLeft: 10,
       image: "/img/campana/52242f9a-f563-4e47-b21a-83ef501c00e6.jpeg",
-      featured: true // Marcada como destacada
+      featured: true,
+      isBlockchain: true,
+      address: "0xCF4A2C47B8B8C4E2FfE8EcD2c4c4B9B4A8B4C4D2E4F"
     },
     {
-      id: "1",
+      id: "mock-1",
       title: "Reforestación Amazónica",
       organization: "EcoFuturo ONG",
       description:
@@ -41,9 +67,11 @@ export default function CampaignsPage() {
       backers: 128,
       daysLeft: 15,
       image: "/img/campana/Reforestación Amazónica.jpeg",
+      isBlockchain: true,
+      address: "0xA8F5B2E7C3D9F1E4B7A2C5D8F3E6B9A2C5D8F3E6B"
     },
     {
-      id: "2",
+      id: "mock-2",
       title: "Energía Solar para Comunidades",
       organization: "SolarTech",
       description:
@@ -53,67 +81,87 @@ export default function CampaignsPage() {
       backers: 74,
       daysLeft: 21,
       image: "/img/campana/Energía Solar para Comunidades.jpg",
-    },
-    {
-      id: "3",
-      title: "Educación Digital Inclusiva",
-      organization: "FuturoDigital",
-      description:
-        "Programa de capacitación en tecnología para jóvenes de bajos recursos.",
-      raised: 12000,
-      goal: 15000,
-      backers: 95,
-      daysLeft: 7,
-      image: "/img/campana/Educación Digital Inclusiva.jpg",
-    },
-    {
-      id: "4",
-      title: "Agua Potable para Todos",
-      organization: "AguaVida",
-      description:
-        "Construcción de pozos de agua potable en comunidades rurales sin acceso a agua limpia.",
-      raised: 5000,
-      goal: 12000,
-      backers: 42,
-      daysLeft: 30,
-      image: "/img/campana/Agua Potable para Todos.jpg",
-    },
-    {
-      id: "5",
-      title: "Emprendimiento Juvenil",
-      organization: "FuturoJoven",
-      description:
-        "Programa de mentoría y financiamiento para jóvenes emprendedores en zonas vulnerables.",
-      raised: 7500,
-      goal: 10000,
-      backers: 63,
-      daysLeft: 12,
-      image: "/img/campana/Emprendimiento Juvenil.jpg",
-    },
-    {
-      id: "6",
-      title: "Conservación Marina",
-      organization: "OcéanoVivo",
-      description:
-        "Proyecto para la limpieza y conservación de arrecifes de coral en peligro.",
-      raised: 18000,
-      goal: 30000,
-      backers: 152,
-      daysLeft: 25,
-      image: "/img/campana/Conservación Marina.jpg",
-    },
-  ];
+      isBlockchain: true,
+      address: "0xB3F7E9A5C2D8F4B7E1A4C7D0F3B6E9A2C5D8F3E6B"
+    }
+  ], []);
+
+  // Función para cargar campañas del blockchain
+  const loadBlockchainCampaigns = useCallback(async () => {
+    if (!isConnected || chainId !== 1287) {
+      console.log("⚠️ Not connected to Moonbase Alpha, showing only mock campaigns");
+      setAllCampaigns(mockCampaigns);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      console.log("🔗 Loading blockchain campaigns...");
+      const blockchainCampaigns = await getAllCampaigns();
+      
+      // Convertir campañas blockchain al formato esperado
+      const formattedBlockchainCampaigns: Campaign[] = blockchainCampaigns.map((campaign) => ({
+        id: campaign.address,
+        title: campaign.title,
+        organization: campaign.organization || "Organización Blockchain",
+        description: campaign.description,
+        raised: parseFloat(campaign.raised),
+        goal: parseFloat(campaign.goal),
+        backers: campaign.backers || 0,
+        daysLeft: Math.max(0, Math.floor((campaign.deadline - Date.now()) / (1000 * 60 * 60 * 24))),
+        image: campaign.image || "/img/campana/blockchain-campaign.jpg",
+        isBlockchain: true,
+        address: campaign.address
+      }));
+
+      console.log(`✅ Loaded ${formattedBlockchainCampaigns.length} blockchain campaigns`);
+      
+      // Combinar campañas blockchain con mock campaigns
+      // Las campañas blockchain aparecen primero
+      setAllCampaigns([...formattedBlockchainCampaigns, ...mockCampaigns]);
+      
+    } catch (error) {
+      console.error("❌ Error loading blockchain campaigns:", error);
+      // Si hay error, mostrar solo las mock campaigns
+      setAllCampaigns(mockCampaigns);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isConnected, chainId, getAllCampaigns, mockCampaigns]);
+
+  // Cargar campañas al montar el componente
+  useEffect(() => {
+    loadBlockchainCampaigns();
+  }, [loadBlockchainCampaigns]);
+
+  // Escuchar eventos de nuevas campañas
+  useEffect(() => {
+    const handleCampaignsUpdated = () => {
+      console.log("🔄 Campaigns updated event received, reloading...");
+      loadBlockchainCampaigns();
+    };
+
+    // Escuchar el evento personalizado que se dispara cuando se crea una nueva campaña
+    window.addEventListener('campaignsUpdated', handleCampaignsUpdated);
+    
+    return () => {
+      window.removeEventListener('campaignsUpdated', handleCampaignsUpdated);
+    };
+  }, [loadBlockchainCampaigns]);
+
+  // Obtener campaña destacada (priorizar blockchain)
+  const featuredCampaign = allCampaigns.find(c => c.featured) || allCampaigns[0];
 
   return (
     <main className="container mx-auto py-12 px-4 md:px-6">
       {/* Banner para campaña destacada */}
-      {campaigns.find(c => c.featured) && (
+      {featuredCampaign && (
         <div className="mb-10 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 rounded-lg p-6 border border-blue-500/50">
           <div className="flex flex-col md:flex-row gap-6">
             <div className="md:w-1/3">
               <Image 
-                src={campaigns.find(c => c.featured)?.image || ""} 
-                alt={campaigns.find(c => c.featured)?.title || "Campaña destacada"}
+                src={featuredCampaign.image} 
+                alt={featuredCampaign.title}
                 width={500}
                 height={300}
                 className="w-full h-64 object-cover rounded-lg" 
@@ -122,22 +170,66 @@ export default function CampaignsPage() {
             <div className="md:w-2/3 flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">URGENTE</span>
+                  {featuredCampaign.featured && (
+                    <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">URGENTE</span>
+                  )}
                   <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">DESTACADO</span>
+                  {featuredCampaign.isBlockchain && (
+                    <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">BLOCKCHAIN</span>
+                  )}
                 </div>
-                <h2 className="text-2xl font-bold mb-2">{campaigns.find(c => c.featured)?.title}</h2>
-                <p className="text-muted-foreground mb-4">{campaigns.find(c => c.featured)?.description}</p>
+                <h2 className="text-2xl font-bold mb-2">{featuredCampaign.title}</h2>
+                <p className="text-muted-foreground mb-4">{featuredCampaign.description}</p>
+                
+                {/* ✅ Mostrar información del contrato si es blockchain */}
+                {featuredCampaign.isBlockchain && featuredCampaign.address && (
+                  <div className="mb-4 p-3 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-md border border-purple-500/20">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Contrato:</span>
+                      <div className="flex items-center gap-2">
+                        <code className="text-sm font-mono bg-background px-2 py-1 rounded border">
+                          {featuredCampaign.address.slice(0, 6)}...{featuredCampaign.address.slice(-4)}
+                        </code>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-2 text-xs hover:bg-purple-500/20"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            navigator.clipboard.writeText(featuredCampaign.address!);
+                          }}
+                          title="Copiar dirección completa"
+                        >
+                          📋
+                        </Button>
+                        <a
+                          href={`https://moonbase.moonscan.io/address/${featuredCampaign.address}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-purple-400 hover:text-purple-300"
+                        >
+                          Ver en Explorer ↗
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="flex gap-4 mb-4">
                   <div>
-                    <p className="text-lg font-bold">${campaigns.find(c => c.featured)?.raised.toLocaleString()}</p>
-                    <p className="text-sm text-muted-foreground">recaudados de ${campaigns.find(c => c.featured)?.goal.toLocaleString()}</p>
+                    <p className="text-lg font-bold">
+                      {featuredCampaign.isBlockchain ? `${featuredCampaign.raised} DOT` : `$${featuredCampaign.raised.toLocaleString()}`}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      recaudados de {featuredCampaign.isBlockchain ? `${featuredCampaign.goal} DOT` : `$${featuredCampaign.goal.toLocaleString()}`}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-lg font-bold">{campaigns.find(c => c.featured)?.backers}</p>
+                    <p className="text-lg font-bold">{featuredCampaign.backers}</p>
                     <p className="text-sm text-muted-foreground">donantes</p>
                   </div>
                   <div>
-                    <p className="text-lg font-bold">{campaigns.find(c => c.featured)?.daysLeft}</p>
+                    <p className="text-lg font-bold">{featuredCampaign.daysLeft}</p>
                     <p className="text-sm text-muted-foreground">días restantes</p>
                   </div>
                 </div>
@@ -147,7 +239,7 @@ export default function CampaignsPage() {
                 size="lg" 
                 className="w-full md:w-auto"
               >
-                <Link href={`/campaigns/${campaigns.find(c => c.featured)?.id}`}>
+                <Link href={`/campaigns/${featuredCampaign.id}`}>
                   Donar Ahora
                 </Link>
               </Button>
@@ -160,11 +252,22 @@ export default function CampaignsPage() {
         <div>
           <h1 className="text-3xl font-bold mb-2">Explora Campañas</h1>
           <p className="text-muted-foreground">
-            Descubre proyectos innovadores y causas sociales que necesitan tu
-            apoyo
+            Descubre proyectos innovadores y causas sociales que necesitan tu apoyo
           </p>
+          {isConnected && chainId === 1287 && (
+            <p className="text-sm text-green-600 mt-1">
+              ✅ Conectado a Moonbase Alpha - Mostrando campañas del blockchain
+            </p>
+          )}
+          {(!isConnected || chainId !== 1287) && (
+            <p className="text-sm text-orange-600 mt-1">
+              ⚠️ Conecta a Moonbase Alpha para ver campañas del blockchain
+            </p>
+          )}
         </div>
-        <Button>Crear Campaña</Button>
+        <Button asChild>
+          <Link href="/campaigns/create">Crear Campaña</Link>
+        </Button>
       </div>
 
       {/* Filtros y búsqueda */}
@@ -203,12 +306,35 @@ export default function CampaignsPage() {
         </div>
       </div>
 
+      {/* Loading state */}
+      {isLoading && (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Cargando campañas del blockchain...</p>
+        </div>
+      )}
+
       {/* Lista de campañas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {campaigns.map((campaign) => (
+        {allCampaigns.map((campaign) => (
           <CampaignCard key={campaign.id} campaign={campaign} />
         ))}
       </div>
+
+      {/* Empty state */}
+      {!isLoading && allCampaigns.length === 0 && (
+        <div className="text-center py-12">
+          <h3 className="text-lg font-semibold mb-2">No hay campañas disponibles</h3>
+          <p className="text-muted-foreground mb-4">
+            {!isConnected || chainId !== 1287 
+              ? "Conecta tu wallet a Moonbase Alpha para ver campañas del blockchain"
+              : "Sé el primero en crear una campaña"
+            }
+          </p>
+          <Button asChild>
+            <Link href="/campaigns/create">Crear Primera Campaña</Link>
+          </Button>
+        </div>
+      )}
     </main>
   );
 }

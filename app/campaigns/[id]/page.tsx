@@ -5,11 +5,13 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { DonationForm } from "@/components/donation-form";
-import { TransparencyTracker } from "@/components/transparency-tracker";
 import { Clock, Users, Award, Shield, ExternalLink, Copy, Share2 } from "lucide-react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useBlockchainContracts } from "@/hooks/useBlockchainContracts";
+import { useWeb3 } from "@/components/providers/web3-provider";
+import { TransactionsList } from "@/components/transactions-list";
 
 interface Reward {
   id: string;
@@ -44,8 +46,8 @@ interface Campaign {
   title: string;
   organization: string;
   description: string;
-  raised: number;
-  goal: number;
+  raised: string;
+  goal: string;
   backers: number;
   daysLeft: number;
   image: string;
@@ -64,8 +66,66 @@ export default function CampaignDetailPage() {
   const campaignId = params?.id as string;
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { getCampaignDetails } = useBlockchainContracts();
+  const { isConnected, chainId } = useWeb3();
 
-  useEffect(() => {
+  const loadCampaign = useCallback(async () => {
+    // Si es un address de blockchain, buscar en el contrato
+    if (campaignId && campaignId.startsWith("0x") && campaignId.length === 42) {
+      // Verificar que estamos conectados y en la red correcta
+      if (!isConnected) {
+        console.log("⚠️ Wallet not connected for blockchain campaign");
+        setCampaign(null);
+        setIsLoading(false);
+        return;
+      }
+      
+      if (chainId !== 1287) {
+        console.log(`⚠️ Wrong network (${chainId}). Expected Moonbase Alpha (1287)`);
+        setCampaign(null);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        console.log("🔍 Loading blockchain campaign:", campaignId);
+        const data = await getCampaignDetails(campaignId);
+        if (data) {
+          // Mapear los datos del contrato al formato Campaign
+          setCampaign({
+            id: data.id,
+            title: data.title,
+            organization: data.organization || `Creador: ${data.creator?.slice(0, 6)}...${data.creator?.slice(-4)}`,
+            description: data.description,
+            raised: data.raised,
+            goal: data.goal,
+            backers: data.backers,
+            daysLeft: data.daysLeft,
+            image: data.image || "/img/campana/blockchain-campaign.jpg",
+            featured: false,
+            verified: true,
+            category: "Blockchain",
+            location: "Descentralizada",
+            website: data.website || `https://moonbase.moonscan.io/address/${campaignId}`,
+            rewards: [],
+            updates: [],
+            transactions: [],
+          });
+        } else {
+          console.log("❌ Campaign not found on blockchain");
+          setCampaign(null);
+        }
+      } catch (error) {
+        console.error("❌ Error loading blockchain campaign:", error);
+        setCampaign(null);
+      }
+      setIsLoading(false);
+      return;
+    }
+
+    // Obtener campañas del localStorage
+    const savedCampaigns = JSON.parse(localStorage.getItem("campaigns") || "[]");
+
     // Datos de campañas (en una implementación real, estos vendrían de una API o blockchain)
     const campaignsData: Campaign[] = [
       {
@@ -74,8 +134,8 @@ export default function CampaignDetailPage() {
         organization: "Cruz Roja Argentina",
         description:
           "Campaña de emergencia para asistir a las familias afectadas por las graves inundaciones en Bahía Blanca y zonas aledañas. Los fondos recaudados se utilizarán para:\n\n- Proporcionar kits de emergencia con alimentos, agua potable y artículos de higiene.\n- Habilitar refugios temporales para personas desplazadas.\n- Brindar asistencia médica y psicológica a los afectados.\n- Apoyar en las labores de limpieza y reconstrucción.\n\nLa situación es crítica y muchas familias lo han perdido todo. Con tu ayuda podemos llevar asistencia rápida y efectiva a quienes más lo necesitan en este momento de emergencia.",
-        raised: 8500,
-        goal: 50000,
+        raised: "8500",
+        goal: "50000",
         backers: 106,
         daysLeft: 10,
         image: "/img/campana/52242f9a-f563-4e47-b21a-83ef501c00e6.jpeg",
@@ -221,8 +281,8 @@ export default function CampaignDetailPage() {
         organization: "EcoFuturo ONG",
         description:
           "Proyecto para plantar 10,000 árboles nativos en zonas deforestadas de la Amazonía. Este proyecto busca restaurar ecosistemas degradados, proteger la biodiversidad y combatir el cambio climático a través de la reforestación con especies nativas.\n\nLos fondos recaudados se utilizarán para:\n- Adquisición de semillas y plántulas nativas\n- Capacitación de comunidades locales en técnicas de reforestación\n- Monitoreo y mantenimiento de las áreas reforestadas\n- Educación ambiental para prevenir la deforestación futura",
-        raised: 15000,
-        goal: 25000,
+        raised: "15000",
+        goal: "25000",
         backers: 128,
         daysLeft: 15,
         image: "/img/campana/Reforestación Amazónica.jpeg",
@@ -364,17 +424,98 @@ export default function CampaignDetailPage() {
       // Aquí irían las demás campañas...
     ];
 
-    const campaign = campaignsData.find((c) => c.id === campaignId) || campaignsData[0];
+    // Obtener donaciones adicionales para campañas hardcodeadas
+    const hardcodedDonations = JSON.parse(localStorage.getItem("hardcodedCampaignDonations") || "{}");
+
+    // Actualizar campañas hardcodeadas con donaciones adicionales
+    const updatedCampaignsData = campaignsData.map(campaign => {
+      const donations = hardcodedDonations[campaign.id];
+      if (donations) {
+        return {
+          ...campaign,
+          raised: (parseFloat(campaign.raised) + donations.raised).toString(),
+          backers: campaign.backers + donations.backers,
+          transactions: [...(campaign.transactions || []), ...donations.transactions]
+        };
+      }
+      return campaign;
+    });
+
+    // Combinar campañas hardcodeadas con las guardadas en localStorage
+    const allCampaigns = [...savedCampaigns, ...updatedCampaignsData];
+
+    const campaign = allCampaigns.find((c) => c.id === campaignId) || campaignsData[0];
     setCampaign(campaign);
     setIsLoading(false);
-  }, [campaignId]);
+  }, [campaignId, isConnected, chainId, getCampaignDetails]);
 
-  if (isLoading || !campaign) {
-    return <div>Cargando...</div>;
+  useEffect(() => {
+    loadCampaign();
+  }, [loadCampaign]);
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-12 px-4 md:px-6">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Cargando campaña...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Si es una campaña blockchain pero no está conectada la wallet
+  if (campaignId && campaignId.startsWith("0x") && campaignId.length === 42 && !isConnected) {
+    return (
+      <div className="container mx-auto py-12 px-4 md:px-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Wallet no conectada</h1>
+          <p className="text-muted-foreground mb-4">
+            Para ver los detalles de esta campaña blockchain, necesitas conectar tu wallet.
+          </p>
+          <Button onClick={() => window.location.href = '/'}>
+            Volver al inicio
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Si está conectada pero en la red incorrecta
+  if (campaignId && campaignId.startsWith("0x") && campaignId.length === 42 && isConnected && chainId !== 1287) {
+    return (
+      <div className="container mx-auto py-12 px-4 md:px-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Red incorrecta</h1>
+          <p className="text-muted-foreground mb-4">
+            Esta campaña está en Moonbase Alpha. Por favor cambia a la red correcta (chainId 1287).
+          </p>
+          <Button onClick={() => window.location.href = '/'}>
+            Volver al inicio
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!campaign) {
+    return (
+      <div className="container mx-auto py-12 px-4 md:px-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Campaña no encontrada</h1>
+          <p className="text-muted-foreground mb-4">
+            La campaña que buscas no existe o no se pudo cargar.
+          </p>
+          <Button onClick={() => window.location.href = '/'}>
+            Volver al inicio
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   const progress = Math.min(
-    Math.round((campaign.raised / campaign.goal) * 100),
+    Math.round((parseFloat(campaign.raised) / parseFloat(campaign.goal)) * 100),
     100
   );
 
@@ -440,7 +581,7 @@ export default function CampaignDetailPage() {
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="about">Acerca de</TabsTrigger>
                 <TabsTrigger value="updates">Actualizaciones</TabsTrigger>
-                <TabsTrigger value="transparency">Transparencia</TabsTrigger>
+                <TabsTrigger value="transactions">Transacciones</TabsTrigger>
               </TabsList>
               <TabsContent value="about" className="space-y-4 py-4">
                 <div className="whitespace-pre-line">{campaign.description}</div>
@@ -496,59 +637,8 @@ export default function CampaignDetailPage() {
                   </p>
                 )}
               </TabsContent>
-              <TabsContent value="transparency" className="py-4">
-                <div className="space-y-6">
-                  <p className="text-muted-foreground">
-                    Todas las transacciones de esta campaña son verificables y rastreables a través de la blockchain.
-                  </p>
-
-                  <TransparencyTracker 
-                    transactions={campaign.transactions}
-                    totalBudget={campaign.goal}
-                    spentBudget={campaign.raised}
-                    donorsCount={campaign.backers}
-                  />
-
-                  <h3 className="text-xl font-bold mb-4">Transacciones recientes</h3>
-
-                  {campaign.transactions && campaign.transactions.length > 0 ? (
-                    <div className="border rounded-lg divide-y">
-                      {campaign.transactions.map((tx: Transaction) => (
-                        <div key={tx.id} className="flex justify-between p-4">
-                          <div>
-                            <div className="font-medium">
-                              {tx.type === "donation" ? "Donación" : "Gasto"}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {tx.date} • {tx.type === "donation" ? `De: ${tx.from}` : `Para: ${tx.to}`}
-                            </div>
-                            {tx.type === "expense" && (
-                              <div className="text-sm text-muted-foreground">
-                                Propósito: {tx.purpose} ({tx.category})
-                              </div>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            <div
-                              className={`font-medium ${
-                                tx.type === "donation" ? "text-green-500" : "text-amber-500"
-                              }`}
-                            >
-                              {tx.type === "donation" ? "+" : "-"}{tx.amount} DOT
-                            </div>
-                            <div className="text-sm text-muted-foreground capitalize">
-                              {tx.status}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground">
-                      No hay transacciones registradas para esta campaña.
-                    </p>
-                  )}
-                </div>
+              <TabsContent value="transactions" className="space-y-4">
+                <TransactionsList campaignAddress={campaignId} />
               </TabsContent>
             </Tabs>
           </div>
@@ -560,10 +650,10 @@ export default function CampaignDetailPage() {
               <div className="space-y-6">
                 <div>
                   <h3 className="text-2xl font-bold mb-1">
-                    {campaign.raised.toLocaleString()} DOT
+                    {parseFloat(campaign.raised).toLocaleString(undefined, { maximumFractionDigits: 4 })} DOT
                   </h3>
                   <p className="text-muted-foreground">
-                    recaudados de {campaign.goal.toLocaleString()} DOT
+                    recaudados de {parseFloat(campaign.goal).toLocaleString(undefined, { maximumFractionDigits: 4 })} DOT
                   </p>
                 </div>
 
