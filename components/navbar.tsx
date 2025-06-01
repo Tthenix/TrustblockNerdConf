@@ -77,8 +77,7 @@ export function Navbar() {
                             Verificación
                           </div>
                           <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                            Cómo funciona la verificación de identidad en
-                            blockchain
+                            Verificación KYC para creadores de campañas
                           </p>
                         </NavigationMenuLink>
                       </Link>
@@ -122,6 +121,13 @@ export function Navbar() {
                 <Link href="/about" legacyBehavior passHref>
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                     Acerca de
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link href="/verificar-wallet" legacyBehavior passHref>
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    Verificar para Crear
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
@@ -205,6 +211,13 @@ export function Navbar() {
                     className="text-sm font-medium transition-colors hover:text-primary"
                   >
                     Acerca de
+                  </Link>
+                  <Link
+                    href="/verificar-wallet"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="text-sm font-medium transition-colors hover:text-primary"
+                  >
+                    Verificar para Crear
                   </Link>
                 </div>
                 <div className="grid gap-2">

@@ -35,6 +35,113 @@
       "artifacts": [
         "DIDRegistry"
       ]
+    },
+    "/home/ezequiel/TrustBlock/TrustBlock/TrustblockNerdConf/contracts/Campaign.sol": {
+      "lastModificationDate": 1748791789177,
+      "contentHash": "f41c38d993ff87a011507b1654488bef",
+      "sourceName": "contracts/Campaign.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "Campaign"
+      ]
+    },
+    "/home/ezequiel/TrustBlock/TrustBlock/TrustblockNerdConf/contracts/CampaignFactory.sol": {
+      "lastModificationDate": 1748791789177,
+      "contentHash": "b6c7de5839c7a5d85fab5eabc7bb740d",
+      "sourceName": "contracts/CampaignFactory.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./Campaign.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "CampaignFactory"
+      ]
+    },
+    "/home/ezequiel/TrustBlock/TrustBlock/TrustblockNerdConf/contracts/DIDRegistry.sol": {
+      "lastModificationDate": 1748791789177,
+      "contentHash": "c8f35e0c2ed5f9c559538ed51f54854b",
+      "sourceName": "contracts/DIDRegistry.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "DIDRegistry"
+      ]
     }
   }
 }
