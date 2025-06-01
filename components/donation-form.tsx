@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
+import { useWalletConnection } from "@/lib/hooks/useWalletConnection";
 
 interface DonationFormProps {
   campaignId: string
@@ -18,6 +19,8 @@ export function DonationForm({ campaignId }: DonationFormProps) {
   const [isAnonymous, setIsAnonymous] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isWalletConnected, setIsWalletConnected] = useState(false)
+  const { isConnected, connectWallet } = useWalletConnection();
+
   const handleDonate = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -130,12 +133,16 @@ export function DonationForm({ campaignId }: DonationFormProps) {
 
   const presetAmounts = [1, 5, 10, 15]
 
-  // Simulación de wallet conectado para demo
-  const handleConnectWallet = () => {
-    setIsWalletConnected(true)
-  }
+  // Remove the old wallet connection simulation
+  const handleConnectWallet = async () => {
+    try {
+      await connectWallet();
+    } catch (error) {
+      console.error("Error connecting wallet:", error);
+    }
+  };
 
-  if (!isWalletConnected) {
+  if (!isConnected) {
     return (
       <div className="text-center">
         <p className="mb-4 text-muted-foreground">Conecta tu wallet para donar a este proyecto</p>
