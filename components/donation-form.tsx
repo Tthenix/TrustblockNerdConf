@@ -134,7 +134,7 @@ export function DonationForm({ campaignId }: DonationFormProps) {
               onClick={() => setAmount(preset.toString())}
               className="border-skyblue/30 hover:bg-skyblue/10 transition-colors"
             >
-              {preset} DEV
+              {preset} DOT
             </Button>
           ))}
         </div>

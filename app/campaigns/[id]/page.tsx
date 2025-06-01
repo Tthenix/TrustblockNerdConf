@@ -315,7 +315,7 @@ export default function CampaignDetailPage() {
                           <div className="flex justify-between mb-2">
                             <h4 className="font-bold">{reward.title}</h4>
                             <span className="text-sm font-medium group-hover:text-white">
-                              Donación mínima: {reward.minDonation} {campaignId && campaignId.startsWith("0x") && campaignId.length === 42 ? 'DEV' : 'USD'}
+                              Donación mínima: {reward.minDonation} {campaignId && campaignId.startsWith("0x") && campaignId.length === 42 ? 'DOT' : 'USD'}
                             </span>
                           </div>
                           <p className="text-muted-foreground mb-2 group-hover:text-white">
@@ -365,13 +365,13 @@ export default function CampaignDetailPage() {
                 <div>
                   <h3 className="text-2xl font-bold mb-1">
                     {campaignId && campaignId.startsWith("0x") && campaignId.length === 42 
-                      ? `${parseFloat(campaign.raised).toLocaleString(undefined, { maximumFractionDigits: 4 })} DEV`
+                      ? `${parseFloat(campaign.raised).toLocaleString(undefined, { maximumFractionDigits: 4 })} DOT`
                       : `$${parseFloat(campaign.raised).toLocaleString()}`
                     }
                   </h3>
                   <p className="text-muted-foreground">
                     recaudados de {campaignId && campaignId.startsWith("0x") && campaignId.length === 42 
-                      ? `${parseFloat(campaign.goal).toLocaleString(undefined, { maximumFractionDigits: 4 })} DEV`
+                      ? `${parseFloat(campaign.goal).toLocaleString(undefined, { maximumFractionDigits: 4 })} DOT`
                       : `$${parseFloat(campaign.goal).toLocaleString()}`
                     }
                   </p>
