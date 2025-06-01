@@ -19,6 +19,7 @@ contract DIDRegistry {
     
     mapping(string => DIDInfo) private didInfos;
     mapping(address => string[]) private ownerDIDs;
+    uint256 private totalDIDCount; // Add counter for total DIDs
     
     event DIDDocumentUpdated(
         string indexed did, 
@@ -69,6 +70,7 @@ contract DIDRegistry {
             
             // Add to owner's DID list
             ownerDIDs[msg.sender].push(did);
+            totalDIDCount++; // Increment total DID count
         } else {
             // Update existing DID (only owner can update)
             require(didInfos[did].owner == msg.sender, "Not the DID owner");
@@ -212,8 +214,6 @@ contract DIDRegistry {
      * @return The total count
      */
     function getTotalDIDs() public view returns (uint256) {
-        // Note: This is a simplified implementation
-        // In production, you might want to maintain a separate counter
-        return 0; // Placeholder - would need additional state tracking
+        return totalDIDCount;
     }
 }
