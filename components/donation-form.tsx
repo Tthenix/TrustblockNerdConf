@@ -24,6 +24,7 @@ export function DonationForm({ campaignId }: DonationFormProps) {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+
   const handleDonate = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -115,7 +116,7 @@ export function DonationForm({ campaignId }: DonationFormProps) {
         >
           Conectar Wallet
         </Button>
-      </div>
+      </div> 
     )
   }
 
