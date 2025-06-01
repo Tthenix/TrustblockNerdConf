@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import { Upload, Target, Award, Info } from "lucide-react";
 import { toast } from "sonner";
 import { useContracts } from "@/hooks/useContracts";
 import { useWeb3 } from "@/components/providers/web3-provider";
+import { useWalletConnection } from "@/lib/hooks/useWalletConnection";
 import Image from "next/image";
 
 interface StoredCampaign {
@@ -31,7 +32,6 @@ interface StoredCampaign {
 export function CreateCampaignForm() {
   const router = useRouter();
   const [step, setStep] = useState(1);
-  const [isVerified, setIsVerified] = useState(false);
   
   // Form states
   const [title, setTitle] = useState("");
@@ -45,11 +45,30 @@ export function CreateCampaignForm() {
   const [image, setImage] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-    const { createCampaign, isConnected } = useContracts();
+  const { createCampaign, isConnected } = useContracts();
   const { connectWallet, account } = useWeb3();
+  
+  // Add KYC verification state
+  const {
+    address,
+    isAuthenticated,
+    authUser,
+    verificationResult
+  } = useWalletConnection();
+
+  // Check if user is verified
+  const isVerified = isAuthenticated && authUser?.isVerified && verificationResult?.status === 'approved';
 
   // Debug logging
-  console.log("Component state:", { isConnected, account, isLoading, step });
+  console.log("Component state:", { isConnected, account, isLoading, step, isVerified, isAuthenticated });
+
+  // Handle wallet connection and KYC check
+  useEffect(() => {
+    if (isConnected && address && !isAuthenticated) {
+      // Wallet connected but not authenticated, redirect to verification
+      router.push('/verificar-wallet');
+    }
+  }, [isConnected, address, isAuthenticated, router]);
 
   const nextStep = () => setStep((prev) => Math.min(prev + 1, 4));
   const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
@@ -230,6 +249,30 @@ export function CreateCampaignForm() {
     }
   };
 
+  const handleVerificationRedirect = () => {
+    if (!isConnected) {
+      // Connect wallet first, then redirect
+      connectWallet().then(() => {
+        router.push('/verificar-wallet');
+      }).catch(() => {
+        toast.error("Error de conexión", {
+          description: "No se pudo conectar la wallet. Por favor intenta de nuevo.",
+          style: {
+            background: "hsl(222, 13%, 14%)",
+            border: "1px solid hsla(326, 100%, 74%, 0.4)",
+            color: "white",
+            fontWeight: "500",
+          },
+          descriptionClassName: "!text-white",
+          icon: "✕",
+        });
+      });
+    } else {
+      // Wallet already connected, go to verification
+      router.push('/verificar-wallet');
+    }
+  };
+
   return (
     <main className="container mx-auto py-12 px-4 md:px-6">
       <div className="max-w-3xl mx-auto">
@@ -273,8 +316,54 @@ export function CreateCampaignForm() {
                 organización
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <VerificationStatus isVerified={isVerified} onVerify={() => setIsVerified(true)} />
+            <CardContent className="space-y-4">
+              {!isConnected ? (
+                <div className="text-center p-6 border rounded-lg bg-muted/50">
+                  <Info className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="font-medium mb-2">Conecta tu Wallet</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Primero necesitas conectar tu wallet para proceder con la verificación KYC
+                  </p>
+                  <Button onClick={handleVerificationRedirect}>
+                    Conectar Wallet
+                  </Button>
+                </div>
+              ) : !isAuthenticated ? (
+                <div className="text-center p-6 border rounded-lg bg-yellow-50 dark:bg-yellow-950/20">
+                  <Info className="h-12 w-12 mx-auto mb-4 text-yellow-600" />
+                  <h3 className="font-medium mb-2">Verificación Requerida</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Tu wallet está conectada pero necesitas completar la verificación KYC
+                  </p>
+                  <Button onClick={handleVerificationRedirect}>
+                    Ir a Verificación KYC
+                  </Button>
+                </div>
+              ) : isVerified ? (
+                <div className="text-center p-6 border rounded-lg bg-green-50 dark:bg-green-950/20">
+                  <div className="h-12 w-12 mx-auto mb-4 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                    <Info className="h-6 w-6 text-green-600" />
+                  </div>
+                  <h3 className="font-medium mb-2 text-green-800 dark:text-green-200">Verificación Completada</h3>
+                  <p className="text-sm text-green-600 dark:text-green-400 mb-2">
+                    Tu identidad ha sido verificada exitosamente
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Wallet: {address?.slice(0, 6)}...{address?.slice(-4)}
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center p-6 border rounded-lg bg-yellow-50 dark:bg-yellow-950/20">
+                  <Info className="h-12 w-12 mx-auto mb-4 text-yellow-600" />
+                  <h3 className="font-medium mb-2">Verificación Pendiente</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Tu verificación KYC está en proceso. Por favor complétala para continuar.
+                  </p>
+                  <Button onClick={handleVerificationRedirect} variant="outline">
+                    Completar Verificación
+                  </Button>
+                </div>
+              )}
             </CardContent>
             <CardFooter className="flex justify-between">
               <Button variant="outline" disabled>

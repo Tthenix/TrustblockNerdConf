@@ -1,24 +1,24 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useWalletConnection } from "@/lib/hooks/useWalletConnection";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Shield, CheckCircle, AlertCircle, Wallet } from "lucide-react";
 import { KYCVerificationModal } from "@/components/kyc-verification-modal";
+import { useWalletConnection } from "@/lib/hooks/useWalletConnection";
+import { useWeb3 } from "@/components/providers/web3-provider";
 
-function WalletVerification() {
+export function WalletVerification() {
   const router = useRouter();
   const [showKYCModal, setShowKYCModal] = useState(false);
+  const { connectWallet, account, isConnected } = useWeb3();
   const {
     address,
-    isConnected,
     isAuthenticated,
     authUser,
-    verificationResult,
-    connectWallet
+    verificationResult
   } = useWalletConnection();
 
   const isVerified = isAuthenticated && authUser?.isVerified && verificationResult?.status === 'approved';
@@ -129,54 +129,5 @@ function WalletVerification() {
         onVerificationComplete={handleVerificationComplete}
       />
     </div>
-  );
-}
-
-function VerificationContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const { authUser, verificationResult } = useWalletConnection();
-  
-  // Safely get the returnTo parameter
-  const returnTo = searchParams?.get('returnTo') || '/campaigns/create';
-
-  useEffect(() => {
-    // Check if verification is completed and redirect back
-    if (authUser?.isVerified && verificationResult?.status === 'approved') {
-      setTimeout(() => {
-        router.push(returnTo);
-      }, 2000);
-    }
-  }, [authUser, verificationResult, router, returnTo]);
-
-  return (
-    <main className="container mx-auto px-4 py-8">
-      <div className="mb-8 text-center">
-        <h1 className="text-4xl font-bold mb-4">Verificación KYC de Wallet</h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Completa el proceso de verificación de identidad (KYC) para tu wallet. 
-          Este proceso garantiza la seguridad y confianza en la plataforma TrustBlock.
-        </p>
-      </div>
-      
-      <WalletVerification />
-    </main>
-  );
-}
-
-export default function VerificarWalletPage() {
-  return (
-    <Suspense fallback={
-      <main className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Cargando verificación...</p>
-          </div>
-        </div>
-      </main>
-    }>
-      <VerificationContent />
-    </Suspense>
   );
 }

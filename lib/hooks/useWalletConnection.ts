@@ -63,7 +63,13 @@ export const useWalletConnection = () => {
 
     try {
       if (typeof window === 'undefined' || !window.ethereum) {
-        throw new Error('MetaMask no está instalado. Por favor instala MetaMask para continuar.');
+        const error = new Error('MetaMask no está instalado. Por favor instala MetaMask para continuar.');
+        setWalletState(prev => ({
+          ...prev,
+          error: error.message,
+          isLoading: false
+        }));
+        throw error;
       }
 
       // Request account access
@@ -72,7 +78,13 @@ export const useWalletConnection = () => {
       }) as string[];
 
       if (accounts.length === 0) {
-        throw new Error('No se pudo acceder a ninguna cuenta');
+        const error = new Error('No se pudo acceder a ninguna cuenta');
+        setWalletState(prev => ({
+          ...prev,
+          error: error.message,
+          isLoading: false
+        }));
+        throw error;
       }
 
       const address = accounts[0];
@@ -81,7 +93,8 @@ export const useWalletConnection = () => {
         ...prev,
         isConnected: true,
         address,
-        isLoading: false
+        isLoading: false,
+        error: null
       }));
 
       return address;
@@ -179,18 +192,44 @@ export const useWalletConnection = () => {
   };
 
   const refreshVerificationStatus = async () => {
-    if (!walletState.authUser?.applicantId) return;
+    if (!walletState.address) return;
 
     try {
-      const verificationResult = await mockSumsubService.getVerificationStatus(walletState.authUser.applicantId);
+      // First check if user is authenticated
+      const authUser = await mockSumsubService.getAuthenticatedUser(walletState.address);
+      if (!authUser) return;
+
+      // Get latest verification result
+      const verificationResult = await mockSumsubService.getVerificationByWallet(walletState.address);
+      
+      // If there's an applicant ID, get the latest status
+      if (authUser.applicantId) {
+        try {
+          const latestResult = await mockSumsubService.getVerificationStatus(authUser.applicantId);
+          setWalletState(prev => ({
+            ...prev,
+            verificationResult: latestResult,
+            authUser: {
+              ...authUser,
+              isVerified: latestResult.status === 'approved',
+              verificationLevel: latestResult.verificationLevel
+            }
+          }));
+          return;
+        } catch (error) {
+          console.error('Error getting latest verification status:', error);
+        }
+      }
+
+      // Fallback to wallet-based verification
       setWalletState(prev => ({
         ...prev,
         verificationResult,
-        authUser: prev.authUser ? {
-          ...prev.authUser,
-          isVerified: verificationResult.status === 'approved',
-          verificationLevel: verificationResult.verificationLevel
-        } : null
+        authUser: {
+          ...authUser,
+          isVerified: verificationResult?.status === 'approved' || false,
+          verificationLevel: verificationResult?.verificationLevel || 'none'
+        }
       }));
     } catch (error) {
       console.error('Error refreshing verification status:', error);
@@ -205,15 +244,19 @@ export const useWalletConnection = () => {
         if (accounts.length === 0) {
           disconnectWallet();
         } else {
+          const newAddress = accounts[0];
           setWalletState(prev => ({
             ...prev,
-            address: accounts[0],
+            address: newAddress,
             isConnected: true,
             // Reset authentication state when account changes
             isAuthenticated: false,
             authUser: null,
             verificationResult: null
           }));
+          
+          // Check authentication for new address
+          checkWalletConnection();
         }
       };
 
@@ -232,7 +275,7 @@ export const useWalletConnection = () => {
         }
       };
     }
-  }, [disconnectWallet]);
+  }, [disconnectWallet, checkWalletConnection]);
 
   useEffect(() => {
     checkWalletConnection();

@@ -45,8 +45,7 @@ interface KYCVerificationModalProps {
 const steps = [
   { id: 1, title: 'Información Personal', icon: User },
   { id: 2, title: 'Subir Documentos', icon: FileText },
-  { id: 3, title: 'Verificación Biométrica', icon: Camera },
-  { id: 4, title: 'Revisión Final', icon: Eye }
+  { id: 3, title: 'Revisión Final', icon: Eye }
 ];
 
 export function KYCVerificationModal({ isOpen, onClose, onVerificationComplete }: KYCVerificationModalProps) {
@@ -99,6 +98,8 @@ export function KYCVerificationModal({ isOpen, onClose, onVerificationComplete }
     try {
       if (!isAuthenticated) {
         await authenticateWithSumsub();
+        // Refresh verification status after authentication
+        await refreshVerificationStatus();
       }
       setCurrentStep(1);
     } catch (err: any) {
@@ -165,7 +166,7 @@ export function KYCVerificationModal({ isOpen, onClose, onVerificationComplete }
     try {
       const success = await mockSumsubService.performLivenessCheck(applicantId);
       if (success) {
-        setCurrentStep(4);
+        setCurrentStep(3);
         await refreshVerificationStatus();
       } else {
         setError('Error en la verificación biométrica');
@@ -190,6 +191,8 @@ export function KYCVerificationModal({ isOpen, onClose, onVerificationComplete }
       if (result.status === 'approved') {
         onVerificationComplete();
         onClose();
+      } else {
+        setError('La verificación no pudo completarse. Por favor, revisa los datos proporcionados.');
       }
     } catch (err: any) {
       setError(err.message || 'Error al finalizar la verificación');
@@ -419,7 +422,13 @@ export function KYCVerificationModal({ isOpen, onClose, onVerificationComplete }
 
               <div className="flex justify-end">
                 <Button
-                  onClick={handleDocumentUpload}
+                  onClick={async () => {
+                    await handleDocumentUpload();
+                    // Automatically proceed to final step after document upload
+                    if (applicantId) {
+                      await handleLivenessCheck();
+                    }
+                  }}
                   disabled={isLoading || !document}
                 >
                   {isLoading ? 'Verificando...' : 'Subir Documento'}
@@ -428,26 +437,8 @@ export function KYCVerificationModal({ isOpen, onClose, onVerificationComplete }
             </div>
           )}
 
-          {/* Step 3: Biometric Verification */}
+          {/* Step 3: Final Review */}
           {currentStep === 3 && (
-            <div className="space-y-4 text-center">
-              <Camera className="h-16 w-16 mx-auto mb-4 text-skyblue" />
-              <p className="text-sm text-muted-foreground mb-6">
-                Para completar la verificación, confirmaremos que eres una persona real.
-              </p>
-              
-              <Button
-                onClick={handleLivenessCheck}
-                disabled={isLoading}
-                size="lg"
-              >
-                {isLoading ? 'Verificando...' : 'Iniciar Verificación Biométrica'}
-              </Button>
-            </div>
-          )}
-
-          {/* Step 4: Final Review */}
-          {currentStep === 4 && (
             <div className="space-y-4 text-center">
               <Eye className="h-16 w-16 mx-auto mb-4 text-skyblue" />
               <p className="text-sm text-muted-foreground mb-6">
