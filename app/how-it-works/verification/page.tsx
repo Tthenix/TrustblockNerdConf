@@ -31,24 +31,16 @@ export default function VerificationPage() {
         </h1>
         <p className="text-muted-foreground mb-8">
           TrustBlock utiliza un sistema KYC robusto powered by Sumsub para
-          garantizar que todos los creadores de campañas sean personas reales y
-          legítimas. Este proceso protege a los donantes y mantiene la integridad
-          de nuestra plataforma blockchain.
+          garantizar la seguridad y confianza en todas las transacciones de
+          crowdfunding en nuestra plataforma blockchain.
         </p>
 
         <div className="space-y-8">
           <section>
             <h2 className="text-2xl font-semibold mb-4">
-              ¿Qué es KYC y por qué es importante?
+              ¿Por qué necesitamos verificación KYC?
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <h3 className="font-medium mb-2">Prevención de Fraude</h3>
-                <p className="text-sm text-muted-foreground">
-                  KYC previene que personas malintencionadas creen campañas falsas
-                  o engañosas para estafar a los donantes.
-                </p>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-4 bg-muted/50 rounded-lg">
                 <h3 className="font-medium mb-2">Cumplimiento Legal</h3>
                 <p className="text-sm text-muted-foreground">
@@ -158,14 +150,6 @@ export default function VerificationPage() {
                 <p className="text-sm text-muted-foreground">
                   Verificación KYC completa con Sumsub. Permite crear campañas,
                   recibir donaciones y acceder a todas las funciones.
-                </p>
-              </div>
-              <div className="p-4 bg-muted/50 rounded-lg border-l-4 border-green-500">
-                <h3 className="font-medium mb-2">Premium - Organizaciones</h3>
-                <p className="text-sm text-muted-foreground">
-                  Verificación adicional para organizaciones con documentos
-                  corporativos, límites de donación más altos y características
-                  especiales.
                 </p>
               </div>
             </div>

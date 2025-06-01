@@ -9,10 +9,10 @@ import { Shield, CheckCircle, AlertCircle, Clock } from "lucide-react"
 interface VerificationStatusProps {
   isVerified: boolean
   onVerify: () => void
-  verificationSteps?: Array<{
+  verificationSteps: Array<{
     title: string
     description: string
-    status: "pending" | "completed" | "failed"
+    status: "completed" | "pending" | "current"
   }>
 }
 
@@ -21,10 +21,11 @@ export function VerificationStatus({ isVerified, onVerify, verificationSteps }: 
 
   const handleVerify = async () => {
     setIsVerifying(true)
-    onVerify()
-    // Simular un delay de verificación
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    setIsVerifying(false)
+    try {
+      await onVerify()
+    } finally {
+      setIsVerifying(false)
+    }
   }
 
   return (
@@ -41,7 +42,7 @@ export function VerificationStatus({ isVerified, onVerify, verificationSteps }: 
             <CheckCircle className="h-4 w-4" />
             <AlertTitle>Verificado</AlertTitle>
             <AlertDescription>
-              Tu identidad ha sido verificada exitosamente.
+              Tu identidad ha sido verificada exitosamente. Puedes acceder a todas las funcionalidades.
             </AlertDescription>
           </Alert>
         ) : (
@@ -54,19 +55,15 @@ export function VerificationStatus({ isVerified, onVerify, verificationSteps }: 
           </Alert>
         )}
 
-        {verificationSteps && (
-          <div className="space-y-4">
+        {!isVerified && (
+          <div className="space-y-3">
             {verificationSteps.map((step, index) => (
-              <div key={index} className="flex items-start gap-4">
-                <div className={`mt-1 h-6 w-6 rounded-full flex items-center justify-center ${
-                  step.status === "completed" ? "bg-green-500" :
-                  step.status === "failed" ? "bg-red-500" :
-                  "bg-gray-300"
-                }`}>
+              <div key={index} className="flex items-center gap-3 p-3 rounded-lg border">
+                <div className="flex-shrink-0">
                   {step.status === "completed" ? (
-                    <CheckCircle className="h-4 w-4 text-white" />
-                  ) : step.status === "failed" ? (
-                    <AlertCircle className="h-4 w-4 text-white" />
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  ) : step.status === "current" ? (
+                    <Clock className="h-4 w-4 text-blue-500" />
                   ) : (
                     <Clock className="h-4 w-4 text-white" />
                   )}
@@ -78,16 +75,6 @@ export function VerificationStatus({ isVerified, onVerify, verificationSteps }: 
               </div>
             ))}
           </div>
-        )}
-
-        {!isVerified && (
-          <Button
-            onClick={handleVerify}
-            disabled={isVerifying}
-            className="w-full"
-          >
-            {isVerifying ? "Verificando..." : "Iniciar Verificación"}
-          </Button>
         )}
       </CardContent>
     </Card>
