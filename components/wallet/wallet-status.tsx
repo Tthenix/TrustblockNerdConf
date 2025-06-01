@@ -1,12 +1,14 @@
 "use client";
 
 import { useWeb3 } from "@/components/providers/web3-provider";
+import { useWalletConnection } from "@/lib/hooks/useWalletConnection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export function WalletStatus() {
-  const { account, isConnected, connectWallet, disconnectWallet, chainId } = useWeb3();
+  const { account, isConnected, connectWallet, chainId } = useWeb3();
+  const { disconnectWallet } = useWalletConnection();
 
   const getNetworkName = (chainId: number | null) => {
     switch (chainId) {
@@ -14,6 +16,8 @@ export function WalletStatus() {
         return "Ethereum Mainnet";
       case 11155111:
         return "Sepolia Testnet";
+      case 1287:
+        return "Moonbase Alpha";
       case 1337:
         return "Localhost";
       default:

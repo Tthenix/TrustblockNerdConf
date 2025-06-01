@@ -1,7 +1,5 @@
 "use client"
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Shield, CheckCircle, AlertCircle, Clock } from "lucide-react"
@@ -16,18 +14,7 @@ interface VerificationStatusProps {
   }>
 }
 
-export function VerificationStatus({ isVerified, onVerify, verificationSteps }: VerificationStatusProps) {
-  const [isVerifying, setIsVerifying] = useState(false)
-
-  const handleVerify = async () => {
-    setIsVerifying(true)
-    try {
-      await onVerify()
-    } finally {
-      setIsVerifying(false)
-    }
-  }
-
+export function VerificationStatus({ isVerified, verificationSteps }: VerificationStatusProps) {
   return (
     <Card>
       <CardHeader>

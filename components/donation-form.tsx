@@ -18,89 +18,47 @@ interface DonationFormProps {
 export function DonationForm({ campaignId }: DonationFormProps) {
   const [amount, setAmount] = useState("")
   const [isAnonymous, setIsAnonymous] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const { isConnected, chainId } = useWeb3()
+  const [isLoading, setIsLoading] = useState(false)
   const { donateToBlockchainCampaign } = useBlockchainContracts()
-  const [success, setSuccess] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
+  const { isConnected, account } = useWeb3()
 
   const handleDonate = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!amount || parseFloat(amount) <= 0) {
+      toast.error("Por favor ingresa un monto válido")
+      return
+    }
 
-    if (!amount) return
+    if (!isConnected) {
+      toast.error("Por favor conecta tu wallet")
+      return
+    }
 
+    setIsLoading(true)
+    
     try {
-      setIsSubmitting(true)
-      setError(null)
-
-      // Verificar que estamos en la red correcta
-      if (chainId !== 1287) {
-        toast.error("Red incorrecta", {
-          description: "Por favor, conéctate a Moonbase Alpha para realizar donaciones",
-          style: {
-            background: "hsl(222, 13%, 14%)",
-            border: "1px solid hsla(326, 100%, 74%, 0.4)",
-            color: "white",
-            fontWeight: "500",
-          },
-          descriptionClassName: "!text-white",
-          icon: "✕",
-        })
-        return
-      }
-
-      // Verificar que el monto sea válido
-      const donationAmount = parseFloat(amount)
-      if (isNaN(donationAmount) || donationAmount <= 0) {
-        toast.error("Monto inválido", {
-          description: "Por favor, ingresa un monto válido mayor a 0",
-          style: {
-            background: "hsl(222, 13%, 14%)",
-            border: "1px solid hsla(326, 100%, 74%, 0.4)",
-            color: "white",
-            fontWeight: "500",
-          },
-          descriptionClassName: "!text-white",
-          icon: "✕",
-        })
-        return
-      }
-
-      // Realizar la donación en el contrato
       const tx = await donateToBlockchainCampaign(campaignId, amount)
-      console.log("Transaction sent:", tx.hash)
+      console.log("Donation transaction:", tx)
       
-      // Esperar la confirmación de la transacción
-      const receipt = await tx.wait()
-      console.log("Transaction confirmed:", receipt)
+      toast.success("¡Donación exitosa!", {
+        description: `Has donado ${amount} DOT a esta campaña`,
+      })
 
-      // Emitir evento de donación completada
-      window.dispatchEvent(new Event('campaignDonationUpdated'))
-      
-      // Resetear formulario
+      // Limpiar formulario
       setAmount("")
       setIsAnonymous(false)
-      setSuccess(true)
-      setTimeout(() => setSuccess(false), 3000)
-
-      // Mostrar toast de éxito
-      toast.success("¡Donación realizada con éxito!", {
-        description: `Has donado ${amount} DOT a esta campaña. ¡Gracias por tu apoyo!`,
-        style: {
-          background: "hsl(222, 13%, 14%)",
-          border: "1px solid hsla(190, 95%, 39%, 0.4)",
-          color: "white",
-          fontWeight: "500",
-        },
-        descriptionClassName: "!text-white",
-        icon: "✓",
-      })
-    } catch (error: any) {
+      
+      // Disparar evento para actualizar las campañas
+      window.dispatchEvent(new CustomEvent('campaignDonationUpdated'))
+      
+    } catch (error: unknown) {
       console.error("Error donating:", error)
-      setError(error.message || "Error al procesar la donación")
+      toast.error("Error al procesar la donación", {
+        description: error instanceof Error ? error.message : "Error desconocido"
+      })
     } finally {
-      setIsSubmitting(false)
+      setIsLoading(false)
     }
   }
 
@@ -120,7 +78,7 @@ export function DonationForm({ campaignId }: DonationFormProps) {
     )
   }
 
-  if (chainId !== 1287) {
+  if (account !== "0x0000000000000000000000000000000000000000") {
     return (
       <div className="text-center">
         <p className="mb-4 text-muted-foreground">Por favor, cambia a la red Moonbase Alpha para realizar donaciones</p>
@@ -185,9 +143,9 @@ export function DonationForm({ campaignId }: DonationFormProps) {
         <Button
           type="submit"
           className="w-full bg-neonpink hover:bg-neonpink/80 transition-colors hover-scale"
-          disabled={isSubmitting || !amount}
+          disabled={isLoading || !amount}
         >
-          {isSubmitting ? "Procesando..." : "Donar Ahora"}
+          {isLoading ? "Procesando..." : "Donar Ahora"}
         </Button>
 
         <p className="text-xs text-center text-muted-foreground">

@@ -5,11 +5,10 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { DonationForm } from "@/components/donation-form";
-import { TransparencyTracker } from "@/components/transparency-tracker";
 import { Clock, Users, Award, Shield, ExternalLink, Copy, Share2 } from "lucide-react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useBlockchainContracts } from "@/hooks/useBlockchainContracts";
 import { useWeb3 } from "@/components/providers/web3-provider";
 import { TransactionsList } from "@/components/transactions-list";
@@ -70,7 +69,7 @@ export default function CampaignDetailPage() {
   const { getCampaignDetails } = useBlockchainContracts();
   const { isConnected, chainId } = useWeb3();
 
-  const loadCampaign = async () => {
+  const loadCampaign = useCallback(async () => {
     // Si es un address de blockchain, buscar en el contrato
     if (campaignId && campaignId.startsWith("0x") && campaignId.length === 42) {
       // Verificar que estamos conectados y en la red correcta
@@ -448,24 +447,11 @@ export default function CampaignDetailPage() {
     const campaign = allCampaigns.find((c) => c.id === campaignId) || campaignsData[0];
     setCampaign(campaign);
     setIsLoading(false);
-  };
+  }, [campaignId, isConnected, chainId, getCampaignDetails]);
 
   useEffect(() => {
-    // Cargar campaña inicialmente
     loadCampaign();
-
-    // Escuchar eventos de donación para actualizar en tiempo real
-    const handleDonationUpdate = () => {
-      console.log("🔄 Actualizando datos de la campaña después de donación");
-      loadCampaign();
-    };
-
-    window.addEventListener('campaignDonationUpdated', handleDonationUpdate);
-
-    return () => {
-      window.removeEventListener('campaignDonationUpdated', handleDonationUpdate);
-    };
-  }, [campaignId, isConnected, chainId]);
+  }, [loadCampaign]);
 
   if (isLoading) {
     return (

@@ -5,7 +5,14 @@ import { ethers } from "ethers";
 // Declaración global para window.ethereum
 declare global {
   interface Window {
-    ethereum?: any;
+    ethereum?: {
+      request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+      send: (method: string, params: unknown[]) => Promise<string[]>;
+      on(event: 'accountsChanged', callback: (accounts: string[]) => void): void;
+      on(event: 'chainChanged', callback: (chainId: string) => void): void;
+      on(event: string, callback: (...args: unknown[]) => void): void;
+      removeListener: (event: string, callback: (...args: unknown[]) => void) => void;
+    };
   }
 }
 
@@ -70,8 +77,9 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
           method: 'wallet_switchEthereumChain',
           params: [{ chainId: MOONBASE_ALPHA.chainId }],
         });
-      } catch (switchError: any) {
-        if (switchError.code === 4902) {
+      } catch (switchError: unknown) {
+        // Check if error has code property indicating chain not added
+        if (switchError && typeof switchError === 'object' && 'code' in switchError && switchError.code === 4902) {
           try {
             await window.ethereum.request({
               method: 'wallet_addEthereumChain',

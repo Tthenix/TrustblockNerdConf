@@ -98,12 +98,12 @@ export const useWalletConnection = () => {
       }));
 
       return address;
-    } catch (error: any) {
+    } catch (error: unknown) {
       let errorMessage = 'Error al conectar wallet';
       
-      if (error.code === 4001) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 4001) {
         errorMessage = 'Conexión rechazada por el usuario';
-      } else if (error.message) {
+      } else if (error instanceof Error && error.message) {
         errorMessage = error.message;
       }
 
@@ -157,12 +157,12 @@ export const useWalletConnection = () => {
       }));
 
       return authUser;
-    } catch (error: any) {
+    } catch (error: unknown) {
       let errorMessage = 'Error en autenticación';
       
-      if (error.code === 4001) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 4001) {
         errorMessage = 'Firma rechazada por el usuario';
-      } else if (error.message) {
+      } else if (error instanceof Error && error.message) {
         errorMessage = error.message;
       }
 
@@ -175,7 +175,7 @@ export const useWalletConnection = () => {
     }
   };
 
-  const disconnectWallet = async () => {
+  const disconnectWallet = useCallback(async () => {
     if (walletState.address) {
       await mockSumsubService.revokeAuthentication(walletState.address);
     }
@@ -189,7 +189,7 @@ export const useWalletConnection = () => {
       isLoading: false,
       error: null
     });
-  };
+  }, [walletState.address]);
 
   const refreshVerificationStatus = async () => {
     if (!walletState.address) return;
@@ -260,7 +260,7 @@ export const useWalletConnection = () => {
         }
       };
 
-      const handleChainChanged = (...args: unknown[]) => {
+      const handleChainChanged = () => {
         // Reload the page when chain changes
         window.location.reload();
       };

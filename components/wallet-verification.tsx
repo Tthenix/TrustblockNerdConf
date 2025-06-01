@@ -13,7 +13,7 @@ import { useWeb3 } from "@/components/providers/web3-provider";
 export function WalletVerification() {
   const router = useRouter();
   const [showKYCModal, setShowKYCModal] = useState(false);
-  const { connectWallet, account, isConnected } = useWeb3();
+  const { connectWallet, isConnected } = useWeb3();
   const {
     address,
     isAuthenticated,

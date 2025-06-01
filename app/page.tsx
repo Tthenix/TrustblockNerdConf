@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Shield, Users, Wallet, LineChart } from "lucide-react";
 import { HeroSection } from "@/components/hero-section";
@@ -31,10 +31,10 @@ interface Campaign {
 
 export default function Home() {
   const [allCampaigns, setAllCampaigns] = useState<Campaign[]>([]);
-  const { getAllCampaigns, isConnected, loading } = useBlockchainContracts();
-  const { chainId, switchToMoonbase } = useWeb3();
+  const { getAllCampaigns, isConnected } = useBlockchainContracts();
+  const { chainId } = useWeb3();
 
-  const loadCampaigns = async () => {
+  const loadCampaigns = useCallback(async () => {
     // Datos de ejemplo hardcodeados
     const featuredCampaigns = [
       {
@@ -116,7 +116,7 @@ export default function Home() {
     const savedCampaigns = JSON.parse(localStorage.getItem("campaigns") || "[]");
     
     // 🧹 Filtrar campañas locales que NO tengan campaignAddress (para evitar duplicados con blockchain)
-    const localOnlyCampaigns = savedCampaigns.filter((campaign: any) => !campaign.campaignAddress);
+    const localOnlyCampaigns = savedCampaigns.filter((campaign: Campaign) => !('campaignAddress' in campaign));
     
     // 🆕 Intentar cargar campañas desde blockchain si está conectado Y en la red correcta  
     let blockchainCampaigns: Campaign[] = [];
@@ -166,7 +166,7 @@ export default function Home() {
     
     // Tomar solo las primeras 6 para mostrar en el home
     setAllCampaigns(combinedCampaigns.slice(0, 6));
-  };
+  }, [isConnected, chainId, getAllCampaigns]);
 
   useEffect(() => {
     loadCampaigns();
@@ -196,7 +196,7 @@ export default function Home() {
       window.removeEventListener('campaignsUpdated', handleCustomStorageChange);
       window.removeEventListener('campaignDonationUpdated', handleDonationUpdate);
     };
-  }, [isConnected, chainId]); // Agregar chainId como dependencia
+  }, [loadCampaigns]);
 
   return (
     <main className="flex min-h-screen flex-col">

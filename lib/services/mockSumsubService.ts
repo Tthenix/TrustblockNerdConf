@@ -165,7 +165,31 @@ class MockSumsubService {
       throw new Error('Applicant not found');
     }
 
-    const isValid = Math.random() > 0.1; // 90% success rate
+    // Validate document properties
+    if (!document.file || document.file.size === 0) {
+      throw new Error('Invalid document file');
+    }
+
+    if (!document.type || !document.country) {
+      throw new Error('Missing document type or country');
+    }
+
+    // Simulate validation based on document type and file properties
+    let successRate = 0.9; // Base 90% success rate
+    
+    // Adjust success rate based on document type
+    if (document.type === 'PASSPORT') {
+      successRate = 0.95; // Higher success rate for passports
+    } else if (document.type === 'DRIVERS_LICENSE') {
+      successRate = 0.85; // Slightly lower for driver's licenses
+    }
+
+    // Simulate file size validation (larger files might have better quality)
+    if (document.file.size > 1000000) { // > 1MB
+      successRate += 0.05;
+    }
+
+    const isValid = Math.random() < successRate;
     
     const result = this.verificationResults.get(applicantId)!;
     result.checks.documentVerification = isValid ? 'passed' : 'failed';

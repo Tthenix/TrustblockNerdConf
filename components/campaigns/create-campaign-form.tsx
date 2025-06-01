@@ -9,7 +9,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { VerificationStatus } from "@/components/verification-status";
 import { RewardForm } from "@/components/reward-form";
 import { Upload, Target, Award, Info } from "lucide-react";
 import { toast } from "sonner";
@@ -18,18 +17,6 @@ import { useWeb3 } from "@/components/providers/web3-provider";
 import { useWalletConnection } from "@/lib/hooks/useWalletConnection";
 import { ethers } from "ethers";
 import Image from "next/image";
-
-interface StoredCampaign {
-  id: string;
-  title: string;
-  organization: string;
-  description: string;
-  goal: number;
-  image: string;
-  category: string;
-  location: string;
-  website: string;
-}
 
 export function CreateCampaignForm() {
   const router = useRouter();
@@ -164,10 +151,10 @@ export function CreateCampaignForm() {
       console.log("✅ Blockchain campaign created:", receipt);
 
       // Obtener dirección de la nueva campaña del evento
-      const campaignCreatedEvent = receipt.logs.find((log: any) => {
+      const campaignCreatedEvent = receipt.logs.find((log: unknown) => {
         try {
           // Buscar el evento CampaignCreated
-          return log.topics[0] === "0x37bb6c1f723b45d67f1e74f38d0317e27d160a58f9efcf0dfd9b9d42c78eef5c";
+          return (log as { topics: string[] }).topics[0] === "0x37bb6c1f723b45d67f1e74f38d0317e27d160a58f9efcf0dfd9b9d42c78eef5c";
         } catch {
           return false;
         }
@@ -179,7 +166,7 @@ export function CreateCampaignForm() {
         const iface = new ethers.Interface([
           "event CampaignCreated(address campaignAddress, address creator, string title)"
         ]);
-        const decoded = iface.parseLog(campaignCreatedEvent);
+        const decoded = iface.parseLog(campaignCreatedEvent as { topics: readonly string[]; data: string });
         newCampaignAddress = decoded?.args.campaignAddress || "";
         console.log("📦 New campaign address:", newCampaignAddress);
       }

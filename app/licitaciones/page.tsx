@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Search, Calendar, DollarSign, Building, Truck, Wrench, Laptop, Hammer, ChefHat, Clock, MapPin, FileText } from "lucide-react";
+import { Search, Calendar, DollarSign, Building, Truck, Wrench, Laptop, Hammer, Clock, MapPin, FileText } from "lucide-react";
 import Link from "next/link";
 
 // Sample data for licitaciones with enhanced details

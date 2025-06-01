@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CampaignCard } from "@/components/campaign-card";
@@ -39,8 +39,8 @@ export default function CampaignsPage() {
   const [allCampaigns, setAllCampaigns] = useState<Campaign[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Datos de ejemplo para campañas (mantener algunas para demo)
-  const mockCampaigns: Campaign[] = [
+  // Move mockCampaigns outside component or memoize it to prevent recreation
+  const mockCampaigns: Campaign[] = useMemo(() => [
     {
       id: "mock-0",
       title: "Ayuda Urgente: Inundaciones en Bahía Blanca",
@@ -52,9 +52,9 @@ export default function CampaignsPage() {
       backers: 106,
       daysLeft: 10,
       image: "/img/campana/52242f9a-f563-4e47-b21a-83ef501c00e6.jpeg",
-      featured: true, // Marcada como destacada
-      isBlockchain: true, // ✅ Cambiar a true para mostrar badge blockchain
-      address: "0xCF4A2C47B8B8C4E2FfE8EcD2c4c4B9B4A8B4C4D2E4F" // ✅ Contrato simulado
+      featured: true,
+      isBlockchain: true,
+      address: "0xCF4A2C47B8B8C4E2FfE8EcD2c4c4B9B4A8B4C4D2E4F"
     },
     {
       id: "mock-1",
@@ -67,8 +67,8 @@ export default function CampaignsPage() {
       backers: 128,
       daysLeft: 15,
       image: "/img/campana/Reforestación Amazónica.jpeg",
-      isBlockchain: true, // ✅ Cambiar a true para mostrar badge blockchain
-      address: "0xA8F5B2E7C3D9F1E4B7A2C5D8F3E6B9A2C5D8F3E6B" // ✅ Contrato simulado
+      isBlockchain: true,
+      address: "0xA8F5B2E7C3D9F1E4B7A2C5D8F3E6B9A2C5D8F3E6B"
     },
     {
       id: "mock-2",
@@ -81,13 +81,13 @@ export default function CampaignsPage() {
       backers: 74,
       daysLeft: 21,
       image: "/img/campana/Energía Solar para Comunidades.jpg",
-      isBlockchain: true, // ✅ Cambiar a true para mostrar badge blockchain
-      address: "0xB3F7E9A5C2D8F4B7E1A4C7D0F3B6E9A2C5D8F3E6B" // ✅ Contrato simulado
+      isBlockchain: true,
+      address: "0xB3F7E9A5C2D8F4B7E1A4C7D0F3B6E9A2C5D8F3E6B"
     }
-  ];
+  ], []);
 
   // Función para cargar campañas del blockchain
-  const loadBlockchainCampaigns = async () => {
+  const loadBlockchainCampaigns = useCallback(async () => {
     if (!isConnected || chainId !== 1287) {
       console.log("⚠️ Not connected to Moonbase Alpha, showing only mock campaigns");
       setAllCampaigns(mockCampaigns);
@@ -100,7 +100,7 @@ export default function CampaignsPage() {
       const blockchainCampaigns = await getAllCampaigns();
       
       // Convertir campañas blockchain al formato esperado
-      const formattedBlockchainCampaigns: Campaign[] = blockchainCampaigns.map((campaign, index) => ({
+      const formattedBlockchainCampaigns: Campaign[] = blockchainCampaigns.map((campaign) => ({
         id: campaign.address,
         title: campaign.title,
         organization: campaign.organization || "Organización Blockchain",
@@ -127,12 +127,12 @@ export default function CampaignsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isConnected, chainId, getAllCampaigns, mockCampaigns]);
 
   // Cargar campañas al montar el componente
   useEffect(() => {
     loadBlockchainCampaigns();
-  }, [isConnected, chainId]);
+  }, [loadBlockchainCampaigns]);
 
   // Escuchar eventos de nuevas campañas
   useEffect(() => {
@@ -147,7 +147,7 @@ export default function CampaignsPage() {
     return () => {
       window.removeEventListener('campaignsUpdated', handleCampaignsUpdated);
     };
-  }, [isConnected, chainId]);
+  }, [loadBlockchainCampaigns]);
 
   // Obtener campaña destacada (priorizar blockchain)
   const featuredCampaign = allCampaigns.find(c => c.featured) || allCampaigns[0];

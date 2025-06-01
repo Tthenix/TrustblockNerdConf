@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { 
@@ -13,17 +12,14 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { 
   CheckCircle, 
   Upload, 
   Shield, 
   AlertCircle, 
-  Clock,
   User,
   FileText,
-  Camera,
   Eye
 } from 'lucide-react';
 import {
@@ -102,8 +98,8 @@ export function KYCVerificationModal({ isOpen, onClose, onVerificationComplete }
         await refreshVerificationStatus();
       }
       setCurrentStep(1);
-    } catch (err: any) {
-      setError(err.message || 'Error al iniciar verificación');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al iniciar verificación');
     } finally {
       setIsLoading(false);
     }
@@ -123,8 +119,8 @@ export function KYCVerificationModal({ isOpen, onClose, onVerificationComplete }
       setApplicantId(id);
       setCurrentStep(2);
       await refreshVerificationStatus();
-    } catch (err: any) {
-      setError(err.message || 'Error al crear el perfil del solicitante');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al crear el perfil del solicitante');
     } finally {
       setIsLoading(false);
     }
@@ -150,8 +146,8 @@ export function KYCVerificationModal({ isOpen, onClose, onVerificationComplete }
       } else {
         setError('Error en la verificación del documento');
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al subir el documento');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al subir el documento');
     } finally {
       setIsLoading(false);
     }
@@ -171,8 +167,8 @@ export function KYCVerificationModal({ isOpen, onClose, onVerificationComplete }
       } else {
         setError('Error en la verificación biométrica');
       }
-    } catch (err: any) {
-      setError(err.message || 'Error en la verificación de vida');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error en la verificación de vida');
     } finally {
       setIsLoading(false);
     }
@@ -194,8 +190,8 @@ export function KYCVerificationModal({ isOpen, onClose, onVerificationComplete }
       } else {
         setError('La verificación no pudo completarse. Por favor, revisa los datos proporcionados.');
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al finalizar la verificación');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al finalizar la verificación');
     } finally {
       setIsLoading(false);
     }
@@ -388,7 +384,7 @@ export function KYCVerificationModal({ isOpen, onClose, onVerificationComplete }
                 <Label htmlFor="documentType">Tipo de Documento</Label>
                 <Select
                   value={documentType}
-                  onValueChange={(value: any) => setDocumentType(value)}
+                  onValueChange={(value: 'PASSPORT' | 'ID_CARD' | 'DRIVERS_LICENSE') => setDocumentType(value)}
                 >
                   <SelectTrigger>
                     <SelectValue />
