@@ -15,6 +15,7 @@ import { Upload, Target, Award, Info } from "lucide-react";
 import { toast } from "sonner";
 import { useBlockchainContracts } from "@/hooks/useBlockchainContracts";
 import { useWeb3 } from "@/components/providers/web3-provider";
+import { useWalletConnection } from "@/lib/hooks/useWalletConnection";
 import { ethers } from "ethers";
 import Image from "next/image";
 
@@ -33,7 +34,6 @@ interface StoredCampaign {
 export function CreateCampaignForm() {
   const router = useRouter();
   const [step, setStep] = useState(1);
-  const [isVerified, setIsVerified] = useState(false);
   
   // Form states
   const [title, setTitle] = useState("");
@@ -47,30 +47,30 @@ export function CreateCampaignForm() {
   const [image, setImage] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  
+
+  // Add KYC verification state
+  const {
+    address,
+    isAuthenticated,
+    authUser,
+    verificationResult
+  } = useWalletConnection();
+
+  // Check if user is verified
+  const isVerified = isAuthenticated && authUser?.isVerified && verificationResult?.status === 'approved';
   const { createCampaignOnBlockchain } = useBlockchainContracts();
   const { connectWallet, account, chainId, isConnected } = useWeb3();
 
   // Debug logging
-  console.log("Component state:", { isConnected, account, isLoading, step });
+  console.log("Component state:", { isConnected, account, isLoading, step, isVerified, isAuthenticated });
 
-  // Check for successful KYC completion
+  // Handle wallet connection and KYC check
   useEffect(() => {
-    // Check if user completed KYC (simulated by URL parameter or localStorage)
-    const urlParams = new URLSearchParams(window.location.search);
-    const kycCompleted = urlParams.get('kyc') === 'completed' || localStorage.getItem('kycVerified') === 'true';
-    
-    if (kycCompleted) {
-      setIsVerified(true);
-      // Clear URL parameter
-      if (urlParams.get('kyc')) {
-        window.history.replaceState({}, '', window.location.pathname);
-      }
+    if (isConnected && address && !isAuthenticated) {
+      // Wallet connected but not authenticated, redirect to verification
+      router.push('/verificar-wallet');
     }
-  }, []);
-
-  // KYC verification will be handled manually in the UI without automatic redirects
-  // Removed the problematic useEffect that was causing infinite redirect loop
+  }, [isConnected, address, isAuthenticated, router]);
 
   const nextStep = () => setStep((prev) => Math.min(prev + 1, 4));
   const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
@@ -259,23 +259,6 @@ export function CreateCampaignForm() {
     }
   };
 
-  // Function to simulate successful KYC (for testing)
-  const handleCompleteKYC = () => {
-    setIsVerified(true);
-    localStorage.setItem('kycVerified', 'true');
-    toast.success("¡Verificación KYC completada!", {
-      description: "Tu identidad ha sido verificada exitosamente",
-      style: {
-        background: "hsl(222, 13%, 14%)",
-        border: "1px solid hsla(190, 95%, 39%, 0.4)",
-        color: "white",
-        fontWeight: "500",
-      },
-      descriptionClassName: "!text-white",
-      icon: "✓",
-    });
-  };
-
   return (
     <main className="container mx-auto py-12 px-4 md:px-6">
       <div className="max-w-3xl mx-auto">
@@ -332,28 +315,18 @@ export function CreateCampaignForm() {
                     Conectar Wallet
                   </Button>
                 </div>
-              ) : !isVerified ? (
+              ) : !isAuthenticated ? (
                 <div className="text-center p-6 border rounded-lg bg-yellow-50 dark:bg-yellow-950/20">
                   <Info className="h-12 w-12 mx-auto mb-4 text-yellow-600" />
                   <h3 className="font-medium mb-2">Verificación Requerida</h3>
                   <p className="text-sm text-muted-foreground mb-4">
                     Tu wallet está conectada pero necesitas completar la verificación KYC
                   </p>
-                  <div className="space-y-2">
-                    <Button onClick={handleVerificationRedirect}>
-                      Ir a Verificación KYC
-                    </Button>
-                    <Button 
-                      onClick={handleCompleteKYC} 
-                      variant="outline" 
-                      size="sm"
-                      className="w-full"
-                    >
-                      🧪 Simular KYC Exitoso (Prueba)
-                    </Button>
-                  </div>
+                  <Button onClick={handleVerificationRedirect}>
+                    Ir a Verificación KYC
+                  </Button>
                 </div>
-              ) : (
+              ) : isVerified ? (
                 <div className="text-center p-6 border rounded-lg bg-green-50 dark:bg-green-950/20">
                   <div className="h-12 w-12 mx-auto mb-4 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
                     <Info className="h-6 w-6 text-green-600" />
@@ -363,8 +336,19 @@ export function CreateCampaignForm() {
                     Tu identidad ha sido verificada exitosamente
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Wallet: {account?.slice(0, 6)}...{account?.slice(-4)}
+                    Wallet: {address?.slice(0, 6)}...{address?.slice(-4)}
                   </p>
+                </div>
+              ) : (
+                <div className="text-center p-6 border rounded-lg bg-yellow-50 dark:bg-yellow-950/20">
+                  <Info className="h-12 w-12 mx-auto mb-4 text-yellow-600" />
+                  <h3 className="font-medium mb-2">Verificación Pendiente</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Tu verificación KYC está en proceso. Por favor complétala para continuar.
+                  </p>
+                  <Button onClick={handleVerificationRedirect} variant="outline">
+                    Completar Verificación
+                  </Button>
                 </div>
               )}
 
