@@ -63,13 +63,13 @@ export default function CampaignDetailPage() {
   const params = useParams();
   const campaignId = params?.id as string;
   const [campaign, setCampaign] = useState<Campaign | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  useEffect(() => {
-    // Obtener campañas del localStorage
-    const savedCampaigns = JSON.parse(localStorage.getItem("campaigns") || "[]");
-    
-    // Datos de campañas (en una implementación real, estos vendrían de una API o blockchain)
-    const campaignsData: Campaign[] = [
+  const [isLoading, setIsLoading] = useState(true);  useEffect(() => {
+    const loadCampaign = () => {
+      // Obtener campañas del localStorage
+      const savedCampaigns = JSON.parse(localStorage.getItem("campaigns") || "[]");
+      
+      // Datos de campañas (en una implementación real, estos vendrían de una API o blockchain)
+      const campaignsData: Campaign[] = [
       {
         id: "0",
         title: "Ayuda Urgente: Inundaciones en Bahía Blanca",
@@ -363,14 +363,52 @@ export default function CampaignDetailPage() {
           }
         ],      },
       // Aquí irían las demás campañas...
-    ];
+    ];      // Obtener donaciones adicionales para campañas hardcodeadas
+      const hardcodedDonations = JSON.parse(localStorage.getItem("hardcodedCampaignDonations") || "{}");
+      
+      // Actualizar campañas hardcodeadas con donaciones adicionales
+      const updatedCampaignsData = campaignsData.map(campaign => {
+        const donations = hardcodedDonations[campaign.id];
+        if (donations) {
+          return {
+            ...campaign,
+            raised: campaign.raised + donations.raised,
+            backers: campaign.backers + donations.backers,
+            transactions: [...(campaign.transactions || []), ...donations.transactions]
+          };
+        }
+        return campaign;
+      });
 
-    // Combinar campañas hardcodeadas con las guardadas en localStorage
-    const allCampaigns = [...savedCampaigns, ...campaignsData];
+      // Combinar campañas hardcodeadas con las guardadas en localStorage
+      const allCampaigns = [...savedCampaigns, ...updatedCampaignsData];
 
     const campaign = allCampaigns.find((c) => c.id === campaignId) || campaignsData[0];
     setCampaign(campaign);
     setIsLoading(false);
+    };
+
+    // Cargar campaña inicialmente
+    loadCampaign();
+
+    // Escuchar eventos de donación para actualizar en tiempo real
+    const handleCampaignUpdate = () => {
+      loadCampaign();
+    };
+
+    const handleDonationUpdate = (event: CustomEvent) => {
+      if (event.detail.campaignId === campaignId) {
+        loadCampaign();
+      }
+    };
+
+    window.addEventListener('campaignsUpdated', handleCampaignUpdate);
+    window.addEventListener('campaignDonationUpdated', handleDonationUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener('campaignsUpdated', handleCampaignUpdate);
+      window.removeEventListener('campaignDonationUpdated', handleDonationUpdate as EventListener);
+    };
   }, [campaignId]);
 
   if (isLoading || !campaign) {

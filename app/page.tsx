@@ -26,8 +26,7 @@ interface Campaign {
 }
 
 export default function Home() {
-  const [allCampaigns, setAllCampaigns] = useState<Campaign[]>([]);
-  const loadCampaigns = () => {
+  const [allCampaigns, setAllCampaigns] = useState<Campaign[]>([]);  const loadCampaigns = () => {
     // Datos de ejemplo hardcodeados
     const featuredCampaigns = [
       {
@@ -84,8 +83,24 @@ export default function Home() {
     // Obtener campañas del localStorage
     const savedCampaigns = JSON.parse(localStorage.getItem("campaigns") || "[]");
     
-    // Combinar campañas guardadas primero (más recientes) con las hardcodeadas
-    const combinedCampaigns = [...savedCampaigns, ...featuredCampaigns];
+    // Obtener donaciones adicionales para campañas hardcodeadas
+    const hardcodedDonations = JSON.parse(localStorage.getItem("hardcodedCampaignDonations") || "{}");
+    
+    // Actualizar campañas hardcodeadas con donaciones adicionales
+    const updatedFeaturedCampaigns = featuredCampaigns.map(campaign => {
+      const donations = hardcodedDonations[campaign.id];
+      if (donations) {
+        return {
+          ...campaign,
+          raised: campaign.raised + donations.raised,
+          backers: campaign.backers + donations.backers
+        };
+      }
+      return campaign;
+    });
+    
+    // Combinar campañas guardadas primero (más recientes) con las hardcodeadas actualizadas
+    const combinedCampaigns = [...savedCampaigns, ...updatedFeaturedCampaigns];
     
     // Tomar solo las primeras 6 para mostrar en el home
     setAllCampaigns(combinedCampaigns.slice(0, 6));

@@ -18,7 +18,6 @@ export function DonationForm({ campaignId }: DonationFormProps) {
   const [isAnonymous, setIsAnonymous] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isWalletConnected, setIsWalletConnected] = useState(false)
-
   const handleDonate = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -31,7 +30,67 @@ export function DonationForm({ campaignId }: DonationFormProps) {
       await new Promise((resolve) => setTimeout(resolve, 2000))
 
       // Aquí iría la lógica real de transacción con Polkadot.js
-      console.log(`Donación de ${amount} DOT a la campaña ${campaignId}`)
+      console.log(`Donación de ${amount} DOT a la campaña ${campaignId}`)      // Actualizar la campaña en localStorage
+      const campaigns = JSON.parse(localStorage.getItem("campaigns") || "[]")
+      const campaignIndex = campaigns.findIndex((c: any) => c.id === campaignId)
+      
+      if (campaignIndex !== -1) {
+        // Campaña existe en localStorage - actualizar directamente
+        campaigns[campaignIndex].raised = (campaigns[campaignIndex].raised || 0) + parseFloat(amount)
+        campaigns[campaignIndex].backers = (campaigns[campaignIndex].backers || 0) + 1
+        
+        // Agregar transacción de donación
+        const newTransaction = {
+          id: `tx_${Date.now()}`,
+          date: new Date().toISOString().split('T')[0],
+          amount: parseFloat(amount),
+          type: "donation" as const,
+          status: "completed" as const,
+          from: isAnonymous ? "Donante Anónimo" : "Donante",
+          purpose: "Donación a la campaña"
+        }
+        
+        if (!campaigns[campaignIndex].transactions) {
+          campaigns[campaignIndex].transactions = []
+        }
+        campaigns[campaignIndex].transactions.push(newTransaction)
+        
+        // Guardar cambios
+        localStorage.setItem("campaigns", JSON.stringify(campaigns))
+      } else {
+        // Campaña hardcodeada - crear entrada en localStorage para las donaciones
+        const hardcodedCampaignDonations = JSON.parse(localStorage.getItem("hardcodedCampaignDonations") || "{}")
+        
+        if (!hardcodedCampaignDonations[campaignId]) {
+          hardcodedCampaignDonations[campaignId] = {
+            raised: 0,
+            backers: 0,
+            transactions: []
+          }
+        }
+        
+        hardcodedCampaignDonations[campaignId].raised += parseFloat(amount)
+        hardcodedCampaignDonations[campaignId].backers += 1
+        
+        const newTransaction = {
+          id: `tx_${Date.now()}`,
+          date: new Date().toISOString().split('T')[0],
+          amount: parseFloat(amount),
+          type: "donation" as const,
+          status: "completed" as const,
+          from: isAnonymous ? "Donante Anónimo" : "Donante",
+          purpose: "Donación a la campaña"
+        }
+        
+        hardcodedCampaignDonations[campaignId].transactions.push(newTransaction)
+        localStorage.setItem("hardcodedCampaignDonations", JSON.stringify(hardcodedCampaignDonations))
+      }
+        
+      // Disparar evento para actualizar la UI
+      window.dispatchEvent(new CustomEvent('campaignsUpdated'))
+      window.dispatchEvent(new CustomEvent('campaignDonationUpdated', { 
+        detail: { campaignId, amount: parseFloat(amount) } 
+      }))
 
       // Resetear formulario
       setAmount("")
