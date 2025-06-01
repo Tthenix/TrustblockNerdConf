@@ -22,6 +22,7 @@ interface Campaign {
   verified?: boolean
   category?: string
   address?: string // Dirección del contrato
+  isBlockchain?: boolean // ✅ Agregar propiedad isBlockchain
 }
 
 interface CampaignCardProps {
@@ -55,7 +56,7 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
         </div>
         
         {/* 🆕 Mostrar dirección del contrato si es una campaña blockchain */}
-        {campaign.category === "Blockchain" && campaign.address && (
+        {(campaign.category === "Blockchain" || campaign.isBlockchain) && campaign.address && (
           <div className="mb-3 p-2 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-md border border-purple-500/20">
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">

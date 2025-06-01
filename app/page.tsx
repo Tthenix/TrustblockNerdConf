@@ -25,6 +25,8 @@ interface Campaign {
   category?: string;
   location?: string;
   website?: string;
+  isBlockchain?: boolean;
+  address?: string;
 }
 
 export default function Home() {
@@ -46,7 +48,13 @@ export default function Home() {
         backers: 106,
         daysLeft: 10,
         image: "/img/campana/52242f9a-f563-4e47-b21a-83ef501c00e6.jpeg",
-        featured: true
+        featured: true,
+        isBlockchain: true,
+        address: "0xCF4A2C47B8B8C4E2FfE8EcD2c4c4B9B4A8B4C4D2E4F",
+        verified: true,
+        category: "Ayuda Humanitaria",
+        location: "Bahía Blanca, Argentina",
+        website: "https://cruzroja.org.ar"
       },
       {
         id: "hardcoded-1",
@@ -59,6 +67,12 @@ export default function Home() {
         backers: 128,
         daysLeft: 15,
         image: "/img/campana/Reforestación Amazónica.jpeg",
+        isBlockchain: true,
+        address: "0xA8F5B2E7C3D9F1E4B7A2C5D8F3E6B9A2C5D8F3E6B",
+        verified: true,
+        category: "Medio Ambiente",
+        location: "Amazonía, Brasil",
+        website: "https://ecofuturo.org"
       },
       {
         id: "hardcoded-2",
@@ -71,6 +85,12 @@ export default function Home() {
         backers: 74,
         daysLeft: 21,
         image: "/img/campana/Energía Solar para Comunidades.jpg",
+        isBlockchain: true,
+        address: "0xB3F7E9A5C2D8F4B7E1A4C7D0F3B6E9A2C5D8F3E6B",
+        verified: true,
+        category: "Tecnología",
+        location: "Comunidades Rurales",
+        website: "https://solartech.org"
       },
       {
         id: "hardcoded-3",
@@ -83,6 +103,12 @@ export default function Home() {
         backers: 95,
         daysLeft: 7,
         image: "/img/campana/Educación Digital Inclusiva.jpg",
+        isBlockchain: true,
+        address: "0xD6E8F2B4A7C1E5F8B2A5C8E1F4B7A1C4E7F0B3A6",
+        verified: true,
+        category: "Educación",
+        location: "Múltiples Ciudades",
+        website: "https://futurodigital.org"
       },
     ];
 

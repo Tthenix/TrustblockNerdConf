@@ -29,6 +29,7 @@ interface Campaign {
   image: string;
   featured?: boolean;
   isBlockchain?: boolean;
+  address?: string;
 }
 
 export default function CampaignsPage() {
@@ -52,7 +53,8 @@ export default function CampaignsPage() {
       daysLeft: 10,
       image: "/img/campana/52242f9a-f563-4e47-b21a-83ef501c00e6.jpeg",
       featured: true, // Marcada como destacada
-      isBlockchain: false
+      isBlockchain: true, // ✅ Cambiar a true para mostrar badge blockchain
+      address: "0xCF4A2C47B8B8C4E2FfE8EcD2c4c4B9B4A8B4C4D2E4F" // ✅ Contrato simulado
     },
     {
       id: "mock-1",
@@ -65,7 +67,8 @@ export default function CampaignsPage() {
       backers: 128,
       daysLeft: 15,
       image: "/img/campana/Reforestación Amazónica.jpeg",
-      isBlockchain: false
+      isBlockchain: true, // ✅ Cambiar a true para mostrar badge blockchain
+      address: "0xA8F5B2E7C3D9F1E4B7A2C5D8F3E6B9A2C5D8F3E6B" // ✅ Contrato simulado
     },
     {
       id: "mock-2",
@@ -78,7 +81,8 @@ export default function CampaignsPage() {
       backers: 74,
       daysLeft: 21,
       image: "/img/campana/Energía Solar para Comunidades.jpg",
-      isBlockchain: false
+      isBlockchain: true, // ✅ Cambiar a true para mostrar badge blockchain
+      address: "0xB3F7E9A5C2D8F4B7E1A4C7D0F3B6E9A2C5D8F3E6B" // ✅ Contrato simulado
     }
   ];
 
@@ -106,7 +110,8 @@ export default function CampaignsPage() {
         backers: campaign.backers || 0,
         daysLeft: Math.max(0, Math.floor((campaign.deadline - Date.now()) / (1000 * 60 * 60 * 24))),
         image: campaign.image || "/img/campana/blockchain-campaign.jpg",
-        isBlockchain: true
+        isBlockchain: true,
+        address: campaign.address
       }));
 
       console.log(`✅ Loaded ${formattedBlockchainCampaigns.length} blockchain campaigns`);
@@ -175,6 +180,41 @@ export default function CampaignsPage() {
                 </div>
                 <h2 className="text-2xl font-bold mb-2">{featuredCampaign.title}</h2>
                 <p className="text-muted-foreground mb-4">{featuredCampaign.description}</p>
+                
+                {/* ✅ Mostrar información del contrato si es blockchain */}
+                {featuredCampaign.isBlockchain && featuredCampaign.address && (
+                  <div className="mb-4 p-3 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-md border border-purple-500/20">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Contrato:</span>
+                      <div className="flex items-center gap-2">
+                        <code className="text-sm font-mono bg-background px-2 py-1 rounded border">
+                          {featuredCampaign.address.slice(0, 6)}...{featuredCampaign.address.slice(-4)}
+                        </code>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-2 text-xs hover:bg-purple-500/20"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            navigator.clipboard.writeText(featuredCampaign.address!);
+                          }}
+                          title="Copiar dirección completa"
+                        >
+                          📋
+                        </Button>
+                        <a
+                          href={`https://moonbase.moonscan.io/address/${featuredCampaign.address}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-purple-400 hover:text-purple-300"
+                        >
+                          Ver en Explorer ↗
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="flex gap-4 mb-4">
                   <div>
                     <p className="text-lg font-bold">
