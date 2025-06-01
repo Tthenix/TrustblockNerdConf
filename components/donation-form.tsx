@@ -20,7 +20,7 @@ export function DonationForm({ campaignId }: DonationFormProps) {
   const [isAnonymous, setIsAnonymous] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const { donateToBlockchainCampaign } = useBlockchainContracts()
-  const { isConnected, account } = useWeb3()
+  const { isConnected, chainId } = useWeb3()
 
   const handleDonate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,6 +32,11 @@ export function DonationForm({ campaignId }: DonationFormProps) {
 
     if (!isConnected) {
       toast.error("Por favor conecta tu wallet")
+      return
+    }
+
+    if (chainId !== 1287) {
+      toast.error("Por favor cambia a Moonbase Alpha (Chain ID: 1287)")
       return
     }
 
@@ -78,10 +83,16 @@ export function DonationForm({ campaignId }: DonationFormProps) {
     )
   }
 
-  if (account !== "0x0000000000000000000000000000000000000000") {
+  // Verificar que esté en la red correcta
+  if (chainId !== 1287) {
     return (
       <div className="text-center">
-        <p className="mb-4 text-muted-foreground">Por favor, cambia a la red Moonbase Alpha para realizar donaciones</p>
+        <p className="mb-4 text-muted-foreground">
+          Para realizar donaciones, necesitas estar conectado a Moonbase Alpha.
+        </p>
+        <p className="mb-4 text-sm text-orange-600">
+          Red actual: {chainId ? `Chain ID ${chainId}` : "Desconocida"}
+        </p>
         <Button
           onClick={() => window.ethereum?.request({
             method: 'wallet_switchEthereumChain',
@@ -123,7 +134,7 @@ export function DonationForm({ campaignId }: DonationFormProps) {
               onClick={() => setAmount(preset.toString())}
               className="border-skyblue/30 hover:bg-skyblue/10 transition-colors"
             >
-              {preset} DOT
+              {preset} DEV
             </Button>
           ))}
         </div>
