@@ -4,11 +4,11 @@ import { useState } from "react";
 
 // ✅ Dirección del contrato CampaignFactory desplegado en Moonbase Alpha
 // NOTA: Esta dirección debe ser actualizada después de desplegar el contrato
-const CAMPAIGN_FACTORY_ADDRESS = "0xf0eB5e2c8C03325273Ca1B97fd3825d319fE83a7";
+const CAMPAIGN_FACTORY_ADDRESS = "0xFA205Fc438A3e6B9134b609a6FC643149384203a";
 
 // ABIs de tus contratos
 const CAMPAIGN_FACTORY_ABI = [
-  "function createCampaign(string memory _title, string memory _description, uint256 _targetAmount, uint256 _durationInDays) external",
+  "function createCampaign(string memory _title, string memory _description, string memory _image, uint256 _targetAmount, uint256 _durationInDays) external",
   "function deployedCampaigns(uint256) external view returns (address)",
   "function getCampaignsCount() external view returns (uint256)",
   "function getDeployedCampaigns() external view returns (address[])",
@@ -27,6 +27,11 @@ const CAMPAIGN_ABI =
 					{
 						"internalType": "string",
 						"name": "_description",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "_image",
 						"type": "string"
 					},
 					{
@@ -111,6 +116,11 @@ const CAMPAIGN_ABI =
 					{
 						"internalType": "string",
 						"name": "description",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "image",
 						"type": "string"
 					},
 					{
@@ -209,6 +219,11 @@ const CAMPAIGN_ABI =
 								"type": "string"
 							},
 							{
+								"internalType": "string",
+								"name": "image",
+								"type": "string"
+							},
+							{
 								"internalType": "uint256",
 								"name": "targetAmount",
 								"type": "uint256"
@@ -302,6 +317,7 @@ export function useBlockchainContracts() {
   const createCampaignOnBlockchain = async (campaignData: {
     title: string;
     description: string;
+    image: string;
     goal: string;
     durationDays: number;
   }) => {
@@ -325,6 +341,7 @@ export function useBlockchainContracts() {
       console.log("📝 Campaign data to send:", {
         title: campaignData.title,
         description: campaignData.description,
+        image: campaignData.image,
         targetAmount: targetAmountWei,
         durationInDays: campaignData.durationDays
       });
@@ -339,6 +356,7 @@ export function useBlockchainContracts() {
         const gasEstimate = await factory.createCampaign.estimateGas(
           campaignData.title,
           campaignData.description,
+          campaignData.image,
           targetAmountWei,
           campaignData.durationDays
         );
@@ -352,6 +370,7 @@ export function useBlockchainContracts() {
       const tx = await factory.createCampaign(
         campaignData.title,
         campaignData.description,
+        campaignData.image,
         targetAmountWei,
         campaignData.durationDays
       );
@@ -428,6 +447,7 @@ export function useBlockchainContracts() {
               creator,
               title,
               description,
+              image,
               targetAmount,
               currentAmount: amountRaised,
               deadline,
@@ -483,7 +503,7 @@ export function useBlockchainContracts() {
               goal: targetAmountEther,
               backers: contributersCount,
               daysLeft,
-              image: campaignImage, // Usar imagen basada en tipo de campaña
+              image: image || "/img/campana/blockchain-campaign.jpg",
               
               // ✅ Propiedades opcionales como en las campañas de ejemplo
               featured: i === 0, // La primera campaña blockchain será featured
@@ -565,6 +585,7 @@ export function useBlockchainContracts() {
         creator,
         title,
         description,
+        image,
         targetAmount,
         currentAmount: amountRaised,
         deadline,
@@ -599,7 +620,7 @@ export function useBlockchainContracts() {
         goal: targetAmountEther,
         backers: contributersCount,
         daysLeft,
-        image: "/img/campana/blockchain-campaign.jpg",
+        image: image || "/img/campana/blockchain-campaign.jpg",
         featured: false,
         verified: true,
         category: "Blockchain",

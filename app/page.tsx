@@ -100,7 +100,15 @@ export default function Home() {
         console.log("🌐 Chain ID:", chainId);
         console.log("📍 Expected Moonbase Alpha Chain ID: 1287");
         
-        blockchainCampaigns = await getAllCampaigns();
+        const rawBlockchainCampaigns = await getAllCampaigns();
+        
+        // Convert blockchain campaigns to match local Campaign interface
+        blockchainCampaigns = rawBlockchainCampaigns.map(campaign => ({
+          ...campaign,
+          raised: parseFloat(campaign.raised),
+          goal: parseFloat(campaign.goal)
+        }));
+        
         console.log("✅ Loaded blockchain campaigns:", blockchainCampaigns);
       } catch (error) {
         console.error("❌ Error loading blockchain campaigns:", error);
@@ -167,42 +175,6 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col">
       <HeroSection />
-
-      {/* 🆕 Indicador de conexión blockchain */}
-      {isConnected && (
-        <div className="bg-darkblue/90 backdrop-blur-sm text-center py-3 border-b border-skyblue/20">
-          <p className="text-sm">
-            <span className="text-neonpink font-medium">✅ Conectado a Blockchain</span>
-            <span className="text-gray-300 ml-2">
-              - Red: {chainId === 1287 ? "✅ Moonbase Alpha" : `❌ Red incorrecta (${chainId})`}
-            </span>
-            <span className="text-gray-400 ml-2">
-              - Contrato: {`0x4f2C...af083`}
-            </span>
-            
-            {/* Mostrar botón para cambiar de red si es necesario */}
-            {chainId !== 1287 && (
-              <Button 
-                onClick={switchToMoonbase} 
-                size="sm" 
-                className="ml-4 bg-orange-500 hover:bg-orange-600 text-xs"
-              >
-                🔄 Cambiar a Moonbase Alpha
-              </Button>
-            )}
-            
-            {/* Botón de debug para cargar campañas */}
-            <Button 
-              onClick={loadCampaigns} 
-              disabled={loading || chainId !== 1287}
-              size="sm" 
-              className="ml-2 bg-neonpink/80 hover:bg-neonpink text-xs disabled:opacity-50"
-            >
-              {loading ? "Cargando..." : chainId === 1287 ? "🔄 Recargar Blockchain" : "⚠️ Red incorrecta"}
-            </Button>
-          </p>
-        </div>
-      )}
 
       {/* Sección de características */}
       <section className="py-16 px-4 md:px-6 bg-gradient-to-b from-background to-background/95">

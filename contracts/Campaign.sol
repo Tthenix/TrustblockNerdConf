@@ -6,6 +6,7 @@ contract Campaign {
         address creator;
         string title;
         string description;
+        string image; // NUEVO
         uint256 targetAmount;
         uint256 currentAmount;
         uint256 deadline;
@@ -24,6 +25,7 @@ contract Campaign {
     constructor(
         string memory _title,
         string memory _description,
+        string memory _image, // NUEVO
         uint256 _targetAmount,
         uint256 _durationInDays
     ) {
@@ -31,6 +33,7 @@ contract Campaign {
             creator: msg.sender,
             title: _title,
             description: _description,
+            image: _image, // NUEVO
             targetAmount: _targetAmount,
             currentAmount: 0,
             deadline: block.timestamp + (_durationInDays * 1 days),

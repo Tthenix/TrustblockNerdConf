@@ -70,6 +70,11 @@ export function CreateCampaignForm() {
       reader.readAsDataURL(file);
     }
   };
+
+  const isValidImageUrl = (url: string) => {
+    return /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg|avif)$/i.test(url);
+  };
+
   const handleCreateCampaign = async () => {
     if (!isConnected) {
       try {
@@ -122,14 +127,16 @@ export function CreateCampaignForm() {
       console.log("Creating blockchain campaign with data:", {
         title,
         description,
-        goal: Number(targetAmount),
+        image,
+        goal: targetAmount,
         durationDays: Number(duration)
       });
 
       const receipt = await createCampaignOnBlockchain({
         title,
         description,
-        goal: Number(targetAmount),
+        image,
+        goal: targetAmount,
         durationDays: Number(duration)
       });
 
@@ -253,7 +260,7 @@ export function CreateCampaignForm() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <VerificationStatus isVerified={isVerified} onVerify={() => setIsVerified(true)} />
+             <VerificationStatus isVerified={isVerified} onVerify={() => setIsVerified(true)} />
             </CardContent>
             <CardFooter className="flex justify-between">
               <Button variant="outline" disabled>
@@ -420,8 +427,10 @@ export function CreateCampaignForm() {
                         type="url"
                         value={imageFile ? "" : image}
                         onChange={(e) => {
-                          if (!imageFile) {
-                            setImage(e.target.value);
+                          const url = e.target.value;
+                          setImage(url);
+                          if (url && !isValidImageUrl(url)) {
+                            toast.error("El link debe ser directo a una imagen (.jpg, .png, etc.)");
                           }
                         }}
                         placeholder="https://ejemplo.com/imagen.jpg"
@@ -430,7 +439,7 @@ export function CreateCampaignForm() {
                     </div>
                   </div>
 
-                  {image && (
+                  {image && isValidImageUrl(image) && (
                     <div className="mt-3">
                       <p className="text-sm text-muted-foreground mb-2">Vista previa:</p>
                       <Image 
