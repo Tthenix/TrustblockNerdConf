@@ -32,7 +32,7 @@ export function DonationForm({ campaignId }: DonationFormProps) {
       // Aquí iría la lógica real de transacción con Polkadot.js
       console.log(`Donación de ${amount} DOT a la campaña ${campaignId}`)      // Actualizar la campaña en localStorage
       const campaigns = JSON.parse(localStorage.getItem("campaigns") || "[]")
-      const campaignIndex = campaigns.findIndex((c: any) => c.id === campaignId)
+      const campaignIndex = campaigns.findIndex((c: { id: string }) => c.id === campaignId)
       
       if (campaignIndex !== -1) {
         // Campaña existe en localStorage - actualizar directamente

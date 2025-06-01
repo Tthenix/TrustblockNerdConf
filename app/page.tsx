@@ -107,27 +107,30 @@ export default function Home() {
   };
 
   useEffect(() => {
-    loadCampaigns();
-
-    // Escuchar cambios en localStorage para actualizar automáticamente
+    loadCampaigns();    // Escuchar cambios en localStorage para actualizar automáticamente
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'campaigns') {
+      if (e.key === 'campaigns' || e.key === 'hardcodedCampaignDonations') {
         loadCampaigns();
       }
     };
 
     // Escuchar eventos de storage para cambios desde otras pestañas
-    window.addEventListener('storage', handleStorageChange);
-
-    // Escuchar evento customizado para cambios en la misma pestaña
+    window.addEventListener('storage', handleStorageChange);    // Escuchar evento customizado para cambios en la misma pestaña
     const handleCustomStorageChange = () => {
       loadCampaigns();
     };
+    
+    const handleDonationUpdate = () => {
+      loadCampaigns();
+    };
+    
     window.addEventListener('campaignsUpdated', handleCustomStorageChange);
+    window.addEventListener('campaignDonationUpdated', handleDonationUpdate);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('campaignsUpdated', handleCustomStorageChange);
+      window.removeEventListener('campaignDonationUpdated', handleDonationUpdate);
     };
   }, []);
 
