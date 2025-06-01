@@ -1,6 +1,6 @@
 import { useWeb3 } from "@/components/providers/web3-provider";
 import { ethers } from "ethers";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 // ✅ Dirección del contrato CampaignFactory desplegado en Moonbase Alpha
 // NOTA: Esta dirección debe ser actualizada después de desplegar el contrato
@@ -420,7 +420,7 @@ export function useBlockchainContracts() {
     }
   };
 
-  const getAllCampaigns = async (): Promise<BlockchainCampaign[]> => {
+  const getAllCampaigns = useCallback(async (): Promise<BlockchainCampaign[]> => {
     try {
       // Si no hay dirección del contrato configurada, devolver array vacío
       if (!CAMPAIGN_FACTORY_ADDRESS) {
@@ -453,13 +453,13 @@ export function useBlockchainContracts() {
 
         for (let i = 0; i < campaignAddresses.length; i++) {
           const campaignAddress = campaignAddresses[i];
-          console.log(`🔍 Loading campaign ${i + 1}/${campaignAddresses.length}: ${campaignAddress}`);
+          // Reduced logging to prevent spam
           
           const campaign = new ethers.Contract(campaignAddress, CAMPAIGN_ABI, provider);
 
           try {
             let campaignData = await campaign.getCampaignInfo();
-            console.log("📊 Campaign data:", campaignData);
+            // Only log basic info, not full campaign data to reduce spam
 
             // Extraer datos del struct retornado
             const {
@@ -547,7 +547,7 @@ export function useBlockchainContracts() {
       console.error("❌ Error loading campaigns from blockchain:", error);
       return [];
     }
-  };
+  }, [provider]);
 
   const donateToBlockchainCampaign = async (campaignAddress: string, amountEth: string) => {
     try {
@@ -576,7 +576,7 @@ export function useBlockchainContracts() {
     }
   };
 
-  const getCampaignDetails = async (campaignAddress: string): Promise<BlockchainCampaign | null> => {
+  const getCampaignDetails = useCallback(async (campaignAddress: string): Promise<BlockchainCampaign | null> => {
     try {
       // Verificar si el provider está disponible, si no, crear uno temporal
       let currentProvider = provider;
@@ -593,8 +593,8 @@ export function useBlockchainContracts() {
       const campaign = new ethers.Contract(campaignAddress, CAMPAIGN_ABI, currentProvider);
       
       const campaignData = await campaign.getCampaignInfo();
-      console.log("📊 Campaign data:", campaignData);
-
+      // Reduced console logging to prevent spam
+      
       // Extraer datos del struct retornado
       const {
         creator,
@@ -645,7 +645,7 @@ export function useBlockchainContracts() {
       console.error("Error getting campaign details:", error);
       return null;
     }
-  };
+  }, [provider]);
       
   return {
     createCampaignOnBlockchain,

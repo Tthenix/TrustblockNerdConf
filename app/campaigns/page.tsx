@@ -97,6 +97,7 @@ export default function CampaignsPage() {
     setIsLoading(true);
     try {
       console.log("🔗 Loading blockchain campaigns...");
+      // Call getAllCampaigns directly to avoid dependency issues
       const blockchainCampaigns = await getAllCampaigns();
       
       // Convertir campañas blockchain al formato esperado
@@ -127,7 +128,7 @@ export default function CampaignsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [isConnected, chainId, getAllCampaigns, mockCampaigns]);
+  }, [isConnected, chainId, mockCampaigns, getAllCampaigns]);
 
   // Cargar campañas al montar el componente
   useEffect(() => {

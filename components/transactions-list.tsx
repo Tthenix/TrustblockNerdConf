@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react"
 import { useBlockchainContracts } from "@/hooks/useBlockchainContracts"
 import { ethers } from "ethers"
-import { formatDistanceToNow } from "date-fns"
-import { es } from "date-fns/locale"
 import { ExternalLink } from "lucide-react"
 import { Button } from "./ui/button"
 
@@ -23,6 +21,26 @@ interface TransactionsListProps {
 interface Log {
   transactionHash: string
   blockNumber: number
+}
+
+// Función nativa para formatear tiempo transcurrido
+function formatTimeAgo(timestamp: number): string {
+  const now = Date.now()
+  const diff = now - timestamp
+  
+  const seconds = Math.floor(diff / 1000)
+  const minutes = Math.floor(seconds / 60)
+  const hours = Math.floor(minutes / 60)
+  const days = Math.floor(hours / 24)
+  const months = Math.floor(days / 30)
+  const years = Math.floor(days / 365)
+  
+  if (years > 0) return `hace ${years} año${years > 1 ? 's' : ''}`
+  if (months > 0) return `hace ${months} mes${months > 1 ? 'es' : ''}`
+  if (days > 0) return `hace ${days} día${days > 1 ? 's' : ''}`
+  if (hours > 0) return `hace ${hours} hora${hours > 1 ? 's' : ''}`
+  if (minutes > 0) return `hace ${minutes} minuto${minutes > 1 ? 's' : ''}`
+  return 'hace un momento'
 }
 
 export function TransactionsList({ campaignAddress }: TransactionsListProps) {
@@ -165,14 +183,11 @@ export function TransactionsList({ campaignAddress }: TransactionsListProps) {
                 {tx.from.slice(0, 6)}...{tx.from.slice(-4)}
               </p>
               <p className="text-sm text-muted-foreground">
-                {formatDistanceToNow(tx.timestamp * 1000, {
-                  addSuffix: true,
-                  locale: es
-                })}
+                {formatTimeAgo(tx.timestamp * 1000)}
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              <p className="font-medium text-neonpink">{tx.value} DOT</p>
+              <p className="font-medium text-neonpink">{tx.value} DEV</p>
               <Button
                 variant="ghost"
                 size="icon"
