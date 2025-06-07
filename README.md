@@ -1,4 +1,4 @@
-# 🌟 TrustBlock - Plataforma de Donaciones Descentralizada
+# 🌟 TrustBlock - Financiamiento confiable para causas que importan
 
 **TrustBlock** es una plataforma Web3 de donaciones que combina la transparencia de la blockchain con una interfaz moderna y fácil de usar. Permite crear campañas de donación verificables, realizar donaciones en tiempo real y hacer seguimiento completo de los fondos mediante smart contracts.
 
